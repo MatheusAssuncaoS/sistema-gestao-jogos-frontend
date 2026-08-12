@@ -18,7 +18,7 @@ O redirecionamento após o login é automático conforme o papel do usuário.
 
 | Marco | Versão | Escopo | Status |
 |-------|--------|--------|--------|
-| 0 — Fundação | `v0.0.1` | Setup, roteamento, autenticação e CI | 🔨 Em andamento |
+| 0 — Fundação | `v0.0.1` | Setup, roteamento, autenticação e CI | ✅ Concluído |
 | 1 — Área do jogador | `v1.0.0` | Cadastro, login, consulta e inscrição em partidas | Planejado |
 | 2 — Área do organizador | `v2.0.0` | Criação e gestão de partidas, listagem de inscritos | Planejado |
 | 3 — Área do administrador | `v3.0.0` | Aprovação de jogadores, gestão de organizadores e calendário | Planejado |
