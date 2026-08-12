@@ -1,0 +1,52 @@
+# Dependências
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+dist-ssr/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Cache
+.cache/
+.parcel-cache/
+.vite/
+.turbo/
+
+# Testes
+coverage/
+.nyc_output/
+
+# IDE — IntelliJ / WebStorm
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# IDE — VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Variáveis de ambiente e segredos
+.env
+.env.local
+.env.*.local
+
+# Resíduos de teste manual da API
+cookies.txt
+*.cookies
