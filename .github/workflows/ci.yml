@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # O tsc do build já valida os tipos, então um erro de tipagem quebra o
+      # pipeline mesmo sem um passo de teste dedicado.
+      - name: Build de produção
+        run: npm run build
+
+      # Lint rápido do Oxlint, para pegar problemas de estilo ou de código
+      # morto que o TypeScript deixa passar.
+      - name: Lint
+        run: npx oxlint

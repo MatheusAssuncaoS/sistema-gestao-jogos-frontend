@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { useAuth } from '../contexto/AuthContext';
+import { useAuth } from '../contexto/useAuth';
 import { ApiError } from '../servicos/api';
 
 /**
