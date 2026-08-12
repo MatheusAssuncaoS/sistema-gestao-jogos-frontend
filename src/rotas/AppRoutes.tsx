@@ -34,8 +34,12 @@ export function AppRoutes() {
         <Route element={<Layout />}>
           <Route path="/" element={<EncaminhamentoInicial />} />
 
+          {/* /partidas é acessível para qualquer autenticado, porque a página
+              sabe mostrar mensagem de "aguardando aprovação" para quem ainda
+              não tem o papel JOGADOR. */}
+          <Route path="/partidas" element={<JogadorHome />} />
+
           <Route element={<RotaPorPapel papelExigido="JOGADOR" />}>
-            <Route path="/partidas" element={<JogadorHome />} />
             <Route path="/minhas-inscricoes" element={<MinhasInscricoesPage />} />
           </Route>
 

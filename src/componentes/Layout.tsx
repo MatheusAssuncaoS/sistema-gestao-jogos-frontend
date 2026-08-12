@@ -63,11 +63,12 @@ export function Layout() {
 function linksDoPapel(papeis: Papel[]) {
   const links: { rota: string; rotulo: string }[] = [];
 
+  // Partidas é sempre visível: quem não é jogador ainda vê a mensagem de
+  // "conta aguardando aprovação" ao clicar no link.
+  links.push({ rota: '/partidas', rotulo: 'Partidas' });
+
   if (papeis.includes('JOGADOR')) {
-    links.push(
-      { rota: '/partidas', rotulo: 'Partidas' },
-      { rota: '/minhas-inscricoes', rotulo: 'Minhas inscrições' }
-    );
+    links.push({ rota: '/minhas-inscricoes', rotulo: 'Minhas inscrições' });
   }
 
   if (papeis.includes('ORGANIZADOR')) {
