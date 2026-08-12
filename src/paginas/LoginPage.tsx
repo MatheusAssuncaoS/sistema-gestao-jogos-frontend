@@ -1,17 +1,26 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexto/useAuth';
 import { ApiError } from '../servicos/api';
 
+interface EstadoNavegacao {
+  de?: string;
+}
+
 /**
- * A primeira tela integrada com o backend, servindo de prova de fogo do
- * fluxo de autenticação: se o login funcionar, é sinal de que o proxy,
- * o cookie, o AuthContext e o cliente HTTP estão todos alinhados.
+ * Tela de login.
+ *
+ * Se o usuário chegou aqui via redirect de uma rota protegida, o estado da
+ * navegação carrega o caminho original em `de`. Depois do login, volta para
+ * lá em vez de ir para a home padrão do papel.
  */
 export function LoginPage() {
   const { entrar } = useAuth();
   const navigate = useNavigate();
+  const localizacao = useLocation();
+
+  const destinoOriginal = (localizacao.state as EstadoNavegacao | null)?.de;
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -26,9 +35,9 @@ export function LoginPage() {
     try {
       const usuario = await entrar({ email, senha });
 
-      // Encaminhamento por papel: o admin vai para a área dele; organizador
-      // para a dele; jogador (ou usuário sem papel) para as partidas.
-      if (usuario.papeis.includes('ADMINISTRADOR')) {
+      if (destinoOriginal) {
+        navigate(destinoOriginal, { replace: true });
+      } else if (usuario.papeis.includes('ADMINISTRADOR')) {
         navigate('/admin', { replace: true });
       } else if (usuario.papeis.includes('ORGANIZADOR')) {
         navigate('/organizador', { replace: true });
@@ -90,6 +99,12 @@ export function LoginPage() {
         Não tem conta?{' '}
         <Link to="/cadastro" className="text-blue-600 hover:underline">
           Criar conta
+        </Link>
+      </p>
+
+      <p className="mt-2 text-sm text-gray-600">
+        <Link to="/recuperar-senha" className="text-blue-600 hover:underline">
+          Esqueci minha senha
         </Link>
       </p>
     </div>
