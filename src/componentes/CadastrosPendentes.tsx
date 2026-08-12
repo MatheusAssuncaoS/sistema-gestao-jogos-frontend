@@ -4,6 +4,13 @@ import { adminJogadorService } from '../servicos/adminJogadorService';
 import { ApiError } from '../servicos/api';
 import type { CadastroPendente, Categoria, SituacaoAssociativa } from '../servicos/tipos';
 
+type Aba = 'pendentes' | 'recusados';
+
+interface Aviso {
+  texto: string;
+  tom: 'verde' | 'neutro';
+}
+
 const formatador = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
   timeStyle: 'short',
@@ -25,41 +32,52 @@ function mensagemDeErro(falha: unknown): string {
 }
 
 /**
- * UC27: aprovação e recusa de cadastros pendentes.
+ * UC27: aprovação, recusa e reabertura de cadastros.
  *
  * Aprovar exige categoria e situação associativa (o backend recusa sem
  * isso), então o botão "Aprovar" abre um formulário inline em vez de
- * disparar a requisição direto. Recusar não precisa de dados extras.
+ * disparar a requisição direto. Recusar e reabrir não precisam de dados
+ * extras; recusar pede confirmação por ser a decisão original, reabrir não
+ * pede porque já é a própria reversão dela.
  */
 export function CadastrosPendentes() {
+  const [aba, setAba] = useState<Aba>('pendentes');
   const [cadastros, setCadastros] = useState<CadastroPendente[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [emAndamento, setEmAndamento] = useState<string | null>(null);
-  const [aviso, setAviso] = useState('');
+  const [aviso, setAviso] = useState<Aviso | null>(null);
   const [formularioAberto, setFormularioAberto] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
     setErro(null);
     try {
-      const [pendentes, categoriasAtivas] = await Promise.all([
-        adminJogadorService.listarPendentes(),
+      const [lista, categoriasAtivas] = await Promise.all([
+        aba === 'pendentes'
+          ? adminJogadorService.listarPendentes()
+          : adminJogadorService.listarRecusados(),
         adminJogadorService.listarCategorias(),
       ]);
-      setCadastros(pendentes);
+      setCadastros(lista);
       setCategorias(categoriasAtivas);
     } catch (falha) {
       setErro(mensagemDeErro(falha));
     } finally {
       setCarregando(false);
     }
-  }, []);
+  }, [aba]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  function trocarAba(novaAba: Aba) {
+    setAba(novaAba);
+    setFormularioAberto(null);
+    setAviso(null);
+  }
 
   async function aprovar(
     cadastro: CadastroPendente,
@@ -75,7 +93,7 @@ export function CadastrosPendentes() {
       });
       setCadastros((atual) => atual.filter((c) => c.usuarioId !== cadastro.usuarioId));
       setFormularioAberto(null);
-      setAviso(`Cadastro de ${cadastro.nome} aprovado.`);
+      setAviso({ texto: `Cadastro de ${cadastro.nome} aprovado.`, tom: 'verde' });
     } catch (falha) {
       setErro(mensagemDeErro(falha));
     } finally {
@@ -93,7 +111,24 @@ export function CadastrosPendentes() {
     try {
       await adminJogadorService.recusar(cadastro.usuarioId);
       setCadastros((atual) => atual.filter((c) => c.usuarioId !== cadastro.usuarioId));
-      setAviso(`Cadastro de ${cadastro.nome} recusado.`);
+      setAviso({ texto: `Cadastro de ${cadastro.nome} recusado.`, tom: 'neutro' });
+    } catch (falha) {
+      setErro(mensagemDeErro(falha));
+    } finally {
+      setEmAndamento(null);
+    }
+  }
+
+  async function reabrir(cadastro: CadastroPendente) {
+    setEmAndamento(cadastro.usuarioId);
+    setErro(null);
+    try {
+      await adminJogadorService.reabrir(cadastro.usuarioId);
+      setCadastros((atual) => atual.filter((c) => c.usuarioId !== cadastro.usuarioId));
+      setAviso({
+        texto: `Cadastro de ${cadastro.nome} voltou para a fila de aprovação.`,
+        tom: 'neutro',
+      });
     } catch (falha) {
       setErro(mensagemDeErro(falha));
     } finally {
@@ -105,7 +140,7 @@ export function CadastrosPendentes() {
     <section aria-labelledby="titulo-pendentes" className="mt-6 max-w-3xl">
       <header className="flex items-baseline justify-between gap-4">
         <h2 id="titulo-pendentes" className="text-lg font-semibold">
-          Cadastros aguardando aprovação
+          Cadastros de jogadores
         </h2>
         <button
           type="button"
@@ -117,8 +152,17 @@ export function CadastrosPendentes() {
         </button>
       </header>
 
-      <p role="status" aria-live="polite" className="mt-1 min-h-5 text-sm text-green-700">
-        {aviso}
+      <div className="mt-3 flex gap-4 border-b border-gray-200">
+        <AbaBotao rotulo="Pendentes" ativa={aba === 'pendentes'} onClick={() => trocarAba('pendentes')} />
+        <AbaBotao rotulo="Recusados" ativa={aba === 'recusados'} onClick={() => trocarAba('recusados')} />
+      </div>
+
+      <p
+        role="status"
+        aria-live="polite"
+        className={`mt-2 min-h-5 text-sm ${aviso?.tom === 'verde' ? 'text-green-700' : 'text-gray-700'}`}
+      >
+        {aviso?.texto}
       </p>
 
       {erro && (
@@ -133,7 +177,11 @@ export function CadastrosPendentes() {
       {carregando && <p className="text-gray-600">Carregando cadastros...</p>}
 
       {!carregando && !erro && cadastros.length === 0 && (
-        <p className="text-gray-600">Nenhum cadastro aguardando aprovação no momento.</p>
+        <p className="text-gray-600">
+          {aba === 'pendentes'
+            ? 'Nenhum cadastro aguardando aprovação no momento.'
+            : 'Nenhum cadastro recusado no momento.'}
+        </p>
       )}
 
       {cadastros.length > 0 && (
@@ -151,7 +199,7 @@ export function CadastrosPendentes() {
                   )}
                 </div>
 
-                {formularioAberto !== cadastro.usuarioId && (
+                {aba === 'pendentes' && formularioAberto !== cadastro.usuarioId && (
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -171,9 +219,20 @@ export function CadastrosPendentes() {
                     </button>
                   </div>
                 )}
+
+                {aba === 'recusados' && (
+                  <button
+                    type="button"
+                    onClick={() => reabrir(cadastro)}
+                    disabled={emAndamento !== null}
+                    className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                  >
+                    {emAndamento === cadastro.usuarioId ? 'Reabrindo...' : 'Voltar para pendentes'}
+                  </button>
+                )}
               </div>
 
-              {formularioAberto === cadastro.usuarioId && (
+              {aba === 'pendentes' && formularioAberto === cadastro.usuarioId && (
                 <FormularioDeAprovacao
                   categorias={categorias}
                   enviando={emAndamento === cadastro.usuarioId}
@@ -186,6 +245,21 @@ export function CadastrosPendentes() {
         </ul>
       )}
     </section>
+  );
+}
+
+function AbaBotao({ rotulo, ativa, onClick }: { rotulo: string; ativa: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={ativa ? 'page' : undefined}
+      className={`-mb-px border-b-2 px-1 pb-2 text-sm font-medium ${
+        ativa ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-900'
+      }`}
+    >
+      {rotulo}
+    </button>
   );
 }
 

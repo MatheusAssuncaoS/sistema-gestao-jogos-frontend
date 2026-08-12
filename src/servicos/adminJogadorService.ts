@@ -21,4 +21,8 @@ export const adminJogadorService = {
     api.post(`/api/admin/jogadores/${usuarioId}/aprovar`, dados),
 
   recusar: (usuarioId: string) => api.post<Usuario>(`/api/admin/jogadores/${usuarioId}/recusar`),
+
+  listarRecusados: () => api.get<CadastroPendente[]>('/api/admin/jogadores/recusados'),
+
+  reabrir: (usuarioId: string) => api.post<void>(`/api/admin/jogadores/${usuarioId}/reabrir`),
 };
