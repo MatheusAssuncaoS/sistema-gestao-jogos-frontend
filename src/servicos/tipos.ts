@@ -8,7 +8,7 @@
 
 export type Papel = 'JOGADOR' | 'ORGANIZADOR' | 'ADMINISTRADOR';
 
-export type StatusUsuario = 'PENDENTE' | 'ATIVO' | 'BLOQUEADO' | 'INATIVO';
+export type StatusUsuario = 'PENDENTE' | 'ATIVO' | 'BLOQUEADO' | 'INATIVO' | 'RECUSADO';
 
 export interface Usuario {
   id: string;
@@ -16,4 +16,18 @@ export interface Usuario {
   email: string;
   status: StatusUsuario;
   papeis: Papel[];
+}
+
+export type SituacaoAssociativa = 'PENDENTE' | 'REGULAR' | 'IRREGULAR';
+
+export interface CadastroPendente {
+  usuarioId: string;
+  nome: string;
+  email: string;
+  cadastradoEm: string;
+}
+
+export interface Categoria {
+  id: number;
+  nome: string;
 }
