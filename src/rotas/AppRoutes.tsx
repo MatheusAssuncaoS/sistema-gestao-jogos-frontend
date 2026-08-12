@@ -1,32 +1,53 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 
-import { LoginPage } from '../paginas/LoginPage';
-import { CadastroPage } from '../paginas/CadastroPage';
-import { RecuperarSenhaPage } from '../paginas/RecuperarSenhaPage';
-import { JogadorHome } from '../paginas/JogadorHome';
-import { OrganizadorHome } from '../paginas/OrganizadorHome';
+import { Layout } from '../componentes/Layout';
 import { AdminHome } from '../paginas/AdminHome';
+import { CadastroPage } from '../paginas/CadastroPage';
+import { JogadorHome } from '../paginas/JogadorHome';
+import { LoginPage } from '../paginas/LoginPage';
+import { MinhasInscricoesPage } from '../paginas/MinhasInscricoesPage';
 import { NaoEncontradaPage } from '../paginas/NaoEncontradaPage';
+import { OrganizadorHome } from '../paginas/OrganizadorHome';
+import { RecuperarSenhaPage } from '../paginas/RecuperarSenhaPage';
+import { EncaminhamentoInicial } from './EncaminhamentoInicial';
+import { RotaPorPapel } from './RotaPorPapel';
+import { RotaProtegida } from './RotaProtegida';
 
 /**
- * Esqueleto das rotas por perfil.
+ * Três blocos de rotas:
  *
- * A proteção por papel (redirecionar quem não deveria estar aqui) entra no
- * Marco 1, junto com o AuthContext. Por enquanto todas as áreas são
- * acessíveis para provar que o roteamento funciona.
+ * - públicas: login, cadastro e recuperação de senha, sem layout, para não
+ *   confundir quem ainda não entrou.
+ * - autenticadas: qualquer sessão válida ganha o layout com header e o
+ *   redirecionamento inicial por papel.
+ * - por papel: dentro do bloco autenticado, algumas rotas exigem papel
+ *   específico. RotaPorPapel devolve quem não tem para a raiz.
  */
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
-
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<CadastroPage />} />
       <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
 
-      <Route path="/partidas" element={<JogadorHome />} />
-      <Route path="/organizador" element={<OrganizadorHome />} />
-      <Route path="/admin" element={<AdminHome />} />
+      <Route element={<RotaProtegida />}>
+        <Route element={<Layout />}>
+          <Route path="/" element={<EncaminhamentoInicial />} />
+
+          <Route element={<RotaPorPapel papelExigido="JOGADOR" />}>
+            <Route path="/partidas" element={<JogadorHome />} />
+            <Route path="/minhas-inscricoes" element={<MinhasInscricoesPage />} />
+          </Route>
+
+          <Route element={<RotaPorPapel papelExigido="ORGANIZADOR" />}>
+            <Route path="/organizador" element={<OrganizadorHome />} />
+          </Route>
+
+          <Route element={<RotaPorPapel papelExigido="ADMINISTRADOR" />}>
+            <Route path="/admin" element={<AdminHome />} />
+          </Route>
+        </Route>
+      </Route>
 
       <Route path="*" element={<NaoEncontradaPage />} />
     </Routes>
