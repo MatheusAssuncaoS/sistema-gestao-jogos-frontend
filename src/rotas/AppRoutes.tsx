@@ -9,6 +9,7 @@ import { MinhasInscricoesPage } from '../paginas/MinhasInscricoesPage';
 import { NaoEncontradaPage } from '../paginas/NaoEncontradaPage';
 import { OrganizadorHome } from '../paginas/OrganizadorHome';
 import { RecuperarSenhaPage } from '../paginas/RecuperarSenhaPage';
+import { TrocarSenhaPage } from '../paginas/TrocarSenhaPage';
 import { EncaminhamentoInicial } from './EncaminhamentoInicial';
 import { RotaPorPapel } from './RotaPorPapel';
 import { RotaProtegida } from './RotaProtegida';
@@ -31,6 +32,10 @@ export function AppRoutes() {
       <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
 
       <Route element={<RotaProtegida />}>
+        {/* Fora do Layout de propósito: quem tem senha provisória não deve
+            ver links de navegação para rotas que ainda não pode acessar. */}
+        <Route path="/trocar-senha" element={<TrocarSenhaPage />} />
+
         <Route element={<Layout />}>
           <Route path="/" element={<EncaminhamentoInicial />} />
 

@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../contexto/useAuth';
+import { devePedirTrocaDeSenha } from './trocaSenhaObrigatoria';
 
 /**
  * Envolve rotas que exigem usuário autenticado.
@@ -12,6 +13,11 @@ import { useAuth } from '../contexto/useAuth';
  * Quem chega sem sessão vai para /login com o caminho original guardado
  * no state.de, para a tela de login poder voltar para onde o usuário
  * queria depois de entrar.
+ *
+ * Quem tem uma senha provisória vai para /trocar-senha antes de qualquer
+ * outra rota: é o mesmo tipo de checagem que a de sessão, só que a decisão
+ * em si mora em devePedirTrocaDeSenha, para poder ser testada sem montar
+ * componente.
  */
 export function RotaProtegida() {
   const { usuario, carregando } = useAuth();
@@ -29,6 +35,10 @@ export function RotaProtegida() {
         state={{ de: localizacao.pathname + localizacao.search }}
       />
     );
+  }
+
+  if (devePedirTrocaDeSenha(usuario, localizacao.pathname)) {
+    return <Navigate to="/trocar-senha" replace />;
   }
 
   return <Outlet />;

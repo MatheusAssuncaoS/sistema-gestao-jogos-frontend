@@ -16,6 +16,7 @@ export interface Usuario {
   email: string;
   status: StatusUsuario;
   papeis: Papel[];
+  senhaProvisoria: boolean;
 }
 
 export type SituacaoAssociativa = 'PENDENTE' | 'REGULAR' | 'IRREGULAR';
