@@ -38,6 +38,9 @@ coverage/
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Claude Code — configuração local (launch.json de dev server, etc)
+.claude/
+
 # Sistema operacional
 .DS_Store
 Thumbs.db
