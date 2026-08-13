@@ -32,8 +32,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUsuario(null);
   }, []);
 
+  // Usado depois da troca de senha: o endpoint responde 204, então o
+  // frontend precisa buscar o usuário de novo para a flag senhaProvisoria
+  // cair e o guard de rota parar de redirecionar.
+  const recarregarUsuario = useCallback(async () => {
+    setUsuario(await authService.eu());
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ usuario, carregando, entrar, sair }}>
+    <AuthContext.Provider value={{ usuario, carregando, entrar, sair, recarregarUsuario }}>
       {children}
     </AuthContext.Provider>
   );
