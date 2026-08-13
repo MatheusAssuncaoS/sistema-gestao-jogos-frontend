@@ -26,6 +26,24 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Erro de rede: o fetch nem chegou a receber uma resposta (sem conexão,
+ * servidor fora do ar, CORS, etc), ou o gateway na frente do backend devolveu
+ * um erro de infraestrutura (502/503/504) em vez de uma resposta da
+ * aplicação. Em ambos os casos não há um ProblemDetail para interpretar, e o
+ * usuário precisa da mesma mensagem: o servidor está inacessível, não que o
+ * pedido em si tenha algo errado. Distinto de ApiError, que representa uma
+ * resposta HTTP de erro vinda da aplicação.
+ */
+export class ErroDeRede extends Error {
+  constructor() {
+    super('Falha de conexão com o servidor.');
+    this.name = 'ErroDeRede';
+  }
+}
+
+const STATUS_DE_GATEWAY = new Set([502, 503, 504]);
+
 interface ProblemDetail {
   detail?: string;
   title?: string;
@@ -34,14 +52,23 @@ interface ProblemDetail {
 }
 
 async function requisicao<T>(caminho: string, init: RequestInit = {}): Promise<T> {
-  const resposta = await fetch(caminho, {
-    ...init,
-    credentials: 'include',
-    headers: {
-      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
-      ...init.headers,
-    },
-  });
+  let resposta: Response;
+  try {
+    resposta = await fetch(caminho, {
+      ...init,
+      credentials: 'include',
+      headers: {
+        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+        ...init.headers,
+      },
+    });
+  } catch {
+    throw new ErroDeRede();
+  }
+
+  if (STATUS_DE_GATEWAY.has(resposta.status)) {
+    throw new ErroDeRede();
+  }
 
   if (resposta.status === 204) {
     return undefined as T;
