@@ -24,6 +24,8 @@ function validar(dados: DadosFormulario): Record<string, string> {
   const erroNovaSenha = validarSenha(dados.novaSenha);
   if (erroNovaSenha) {
     erros.novaSenha = erroNovaSenha;
+  } else if (dados.novaSenha && dados.novaSenha === dados.senhaAtual) {
+    erros.novaSenha = 'A nova senha deve ser diferente da senha atual.';
   }
 
   if (dados.confirmacao !== dados.novaSenha) {
@@ -41,7 +43,7 @@ function validar(dados: DadosFormulario): Record<string, string> {
  * navegação para rotas que o usuário ainda não pode acessar só confundiria.
  */
 export function TrocarSenhaPage() {
-  const { recarregarUsuario } = useAuth();
+  const { recarregarUsuario, sair } = useAuth();
   const navigate = useNavigate();
 
   const [senhaAtual, setSenhaAtual] = useState('');
@@ -86,9 +88,12 @@ export function TrocarSenhaPage() {
       navigate('/', { replace: true });
     } catch (falha) {
       if (falha instanceof ApiError) {
-        if (falha.status === 401) {
-          setErrosPorCampo({ senhaAtual: falha.detail });
-          refsPorCampo.senhaAtual.current?.focus();
+        if (falha.campos) {
+          setErrosPorCampo(falha.campos);
+          const primeiroCampoInvalido = ORDEM_CAMPOS.find((campo) => falha.campos?.[campo]);
+          if (primeiroCampoInvalido) {
+            refsPorCampo[primeiroCampoInvalido].current?.focus();
+          }
         } else {
           setErroGeral(falha.detail);
         }
@@ -100,6 +105,11 @@ export function TrocarSenhaPage() {
     } finally {
       setEnviando(false);
     }
+  }
+
+  async function aoSair() {
+    await sair();
+    navigate('/login', { replace: true });
   }
 
   return (
@@ -152,6 +162,12 @@ export function TrocarSenhaPage() {
           {enviando ? 'Trocando senha...' : 'Trocar senha'}
         </button>
       </form>
+
+      <p className="mt-4 text-sm text-gray-600">
+        <button type="button" onClick={aoSair} className="text-blue-600 hover:underline">
+          Sair
+        </button>
+      </p>
     </div>
   );
 }
