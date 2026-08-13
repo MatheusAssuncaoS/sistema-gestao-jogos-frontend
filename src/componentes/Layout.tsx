@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexto/useAuth';
 import type { Papel } from '../servicos/tipos';
@@ -13,10 +13,16 @@ import type { Papel } from '../servicos/tipos';
 export function Layout() {
   const { usuario, sair } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const emAdministracao = location.pathname.startsWith('/admin');
 
   async function aoSair() {
     await sair();
     navigate('/login', { replace: true });
+  }
+
+  if (emAdministracao) {
+    return <Outlet />;
   }
 
   return (

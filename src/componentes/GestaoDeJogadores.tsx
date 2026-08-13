@@ -166,22 +166,23 @@ export function GestaoDeJogadores() {
   }
 
   return (
-    <section aria-labelledby="titulo-pendentes" className="mt-6 max-w-3xl">
-      <header className="flex items-baseline justify-between gap-4">
-        <h2 id="titulo-pendentes" className="text-lg font-semibold">
-          Cadastros de jogadores
-        </h2>
+    <section id="jogadores" aria-labelledby="titulo-pendentes" className="admin-card">
+      <header className="admin-card-header">
+        <div>
+          <h2 id="titulo-pendentes">Gestão de jogadores</h2>
+          <p>Aprove cadastros e gerencie os acessos dos jogadores.</p>
+        </div>
         <button
           type="button"
           onClick={carregar}
           disabled={carregando}
-          className="rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+          className="admin-button admin-button-secondary"
         >
-          Atualizar lista
+          <span aria-hidden="true">↻</span> Atualizar
         </button>
       </header>
 
-      <div className="mt-3 flex gap-4 border-b border-gray-200">
+      <div className="admin-tabs">
         <AbaBotao rotulo="Pendentes" ativa={aba === 'pendentes'} onClick={() => trocarAba('pendentes')} />
         <AbaBotao rotulo="Recusados" ativa={aba === 'recusados'} onClick={() => trocarAba('recusados')} />
         <AbaBotao rotulo="Ativos" ativa={aba === 'ativos'} onClick={() => trocarAba('ativos')} />
@@ -193,7 +194,7 @@ export function GestaoDeJogadores() {
           value={buscaInput}
           onChange={(evento) => setBuscaInput(evento.target.value)}
           placeholder="Buscar por nome ou e-mail"
-          className="mt-3 block w-full max-w-sm rounded border border-gray-300 px-3 py-2 text-sm"
+          className="admin-search"
         />
       )}
 
@@ -225,9 +226,9 @@ export function GestaoDeJogadores() {
           )}
 
           {ativos.length > 0 && (
-            <ul className="mt-4 space-y-2">
+            <ul className="admin-record-list">
               {ativos.map((jogador) => (
-                <li key={jogador.usuarioId} className="rounded-lg border border-gray-200 bg-white p-4">
+                <li key={jogador.usuarioId} className="admin-record">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <strong className="text-base">{jogador.nome}</strong>
@@ -244,7 +245,7 @@ export function GestaoDeJogadores() {
                         type="button"
                         onClick={() => setFormularioAberto(jogador.usuarioId)}
                         disabled={emAndamento !== null}
-                        className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                        className="admin-button admin-button-primary"
                       >
                         Redefinir senha
                       </button>
@@ -274,9 +275,9 @@ export function GestaoDeJogadores() {
           )}
 
           {cadastros.length > 0 && (
-            <ul className="mt-4 space-y-2">
+            <ul className="admin-record-list">
               {cadastros.map((cadastro) => (
-                <li key={cadastro.usuarioId} className="rounded-lg border border-gray-200 bg-white p-4">
+                <li key={cadastro.usuarioId} className="admin-record">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <strong className="text-base">{cadastro.nome}</strong>
@@ -294,7 +295,7 @@ export function GestaoDeJogadores() {
                           type="button"
                           onClick={() => setFormularioAberto(cadastro.usuarioId)}
                           disabled={emAndamento !== null}
-                          className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                          className="admin-button admin-button-success"
                         >
                           Aprovar
                         </button>
@@ -302,7 +303,7 @@ export function GestaoDeJogadores() {
                           type="button"
                           onClick={() => recusar(cadastro)}
                           disabled={emAndamento !== null}
-                          className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                          className="admin-button admin-button-danger"
                         >
                           {emAndamento === cadastro.usuarioId ? 'Recusando...' : 'Recusar'}
                         </button>
@@ -314,7 +315,7 @@ export function GestaoDeJogadores() {
                         type="button"
                         onClick={() => reabrir(cadastro)}
                         disabled={emAndamento !== null}
-                        className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                        className="admin-button admin-button-secondary"
                       >
                         {emAndamento === cadastro.usuarioId ? 'Reabrindo...' : 'Voltar para pendentes'}
                       </button>
@@ -345,9 +346,7 @@ function AbaBotao({ rotulo, ativa, onClick }: { rotulo: string; ativa: boolean; 
       type="button"
       onClick={onClick}
       aria-current={ativa ? 'page' : undefined}
-      className={`-mb-px border-b-2 px-1 pb-2 text-sm font-medium ${
-        ativa ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-900'
-      }`}
+      className={`admin-tab ${ativa ? 'admin-tab-active' : ''}`}
     >
       {rotulo}
     </button>
