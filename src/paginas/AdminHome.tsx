@@ -1,4 +1,4 @@
-import { CadastrosPendentes } from '../componentes/CadastrosPendentes';
+import { GestaoDeJogadores } from '../componentes/GestaoDeJogadores';
 
 export function AdminHome() {
   return (
@@ -9,7 +9,7 @@ export function AdminHome() {
         clube.
       </p>
 
-      <CadastrosPendentes />
+      <GestaoDeJogadores />
     </div>
   );
 }

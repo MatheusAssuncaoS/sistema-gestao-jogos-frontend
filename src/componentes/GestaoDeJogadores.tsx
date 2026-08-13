@@ -40,7 +40,7 @@ function mensagemDeErro(falha: unknown): string {
  * extras; recusar pede confirmação por ser a decisão original, reabrir não
  * pede porque já é a própria reversão dela.
  */
-export function CadastrosPendentes() {
+export function GestaoDeJogadores() {
   const [aba, setAba] = useState<Aba>('pendentes');
   const [cadastros, setCadastros] = useState<CadastroPendente[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
