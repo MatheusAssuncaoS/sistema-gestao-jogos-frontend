@@ -1,5 +1,6 @@
 import { GestaoDeJogadores } from '../componentes/GestaoDeJogadores';
 import { GestaoDePartidas } from '../componentes/GestaoDePartidas';
+import { GestaoDeOrganizadores } from '../componentes/GestaoDeOrganizadores';
 import { useAuth } from '../contexto/useAuth';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,9 +28,9 @@ export function AdminHome() {
           <a className="admin-nav-item admin-nav-item-active" href="#jogadores">
             <span aria-hidden="true">♙</span> Jogadores
           </a>
-          <button className="admin-nav-item" type="button" disabled>
-            <span aria-hidden="true">◇</span> Organizadores <small>em breve</small>
-          </button>
+          <a className="admin-nav-item" href="#organizadores">
+            <span aria-hidden="true">◇</span> Organizadores
+          </a>
           <a className="admin-nav-item" href="#partidas">
             <span aria-hidden="true">▦</span> Partidas
           </a>
@@ -64,6 +65,9 @@ export function AdminHome() {
             <article><span className="admin-summary-icon admin-summary-cyan">▦</span><div><strong>Partidas</strong><small>Agenda do clube</small></div><b>Gerenciar</b></article>
           </section>
           <GestaoDeJogadores />
+          <div className="mt-8">
+            <GestaoDeOrganizadores />
+          </div>
           <div className="mt-8">
             <GestaoDePartidas somenteLeitura />
           </div>

@@ -19,6 +19,14 @@ export interface Usuario {
   senhaProvisoria: boolean;
 }
 
+export interface UsuarioResumo {
+  id: string;
+  nome: string;
+  email: string;
+  status: StatusUsuario;
+  papeis: Papel[];
+}
+
 export type SituacaoAssociativa = 'PENDENTE' | 'REGULAR' | 'IRREGULAR';
 
 export interface CadastroPendente {

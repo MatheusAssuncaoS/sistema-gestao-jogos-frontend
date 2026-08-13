@@ -77,6 +77,7 @@ button { cursor: pointer; }
 .admin-tab-active::after { background: transparent; }
 .admin-search { display: block; width: min(360px, calc(100% - 52px)); margin: 20px 26px 0; padding: 10px 13px; border: 1px solid #dce3ec; border-radius: 8px; outline: none; color: #344055; background: #fafbfd; font-size: 12px; }
 .admin-search:focus { border-color: #76a9f5; box-shadow: 0 0 0 3px rgb(52 124 228 / 10%); }
+.admin-search-spaced { margin-bottom: 18px; }
 .admin-card > [role="status"], .admin-card > p { margin-right: 26px; margin-left: 26px; }
 .admin-record-list { display: grid; gap: 12px; margin: 16px 0 0; padding: 0; list-style: none; border: 0; }
 .admin-record { padding: 16px 18px; border: 1px solid #edf0f5; border-radius: 16px; background: white; transition: transform .15s ease, box-shadow .15s ease; }
