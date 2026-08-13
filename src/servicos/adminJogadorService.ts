@@ -1,10 +1,15 @@
 import { api } from './api';
-import type { CadastroPendente, Categoria, SituacaoAssociativa, Usuario } from './tipos';
+import type { CadastroPendente, Categoria, Jogador, SituacaoAssociativa, Usuario } from './tipos';
 
 export interface DadosAprovacao {
   matriculaAssociado?: string;
   categoriaId: number;
   situacaoAssociativa: SituacaoAssociativa;
+}
+
+export interface DadosRedefinicaoSenha {
+  novaSenha: string;
+  exigirTrocaNoProximoLogin: boolean;
 }
 
 /**
@@ -25,4 +30,10 @@ export const adminJogadorService = {
   listarRecusados: () => api.get<CadastroPendente[]>('/api/admin/jogadores/recusados'),
 
   reabrir: (usuarioId: string) => api.post<void>(`/api/admin/jogadores/${usuarioId}/reabrir`),
+
+  listarAtivos: (busca: string) =>
+    api.get<Jogador[]>(`/api/admin/jogadores/ativos?busca=${encodeURIComponent(busca)}`),
+
+  redefinirSenha: (usuarioId: string, dados: DadosRedefinicaoSenha) =>
+    api.post<void>(`/api/admin/jogadores/${usuarioId}/redefinir-senha`, dados),
 };
