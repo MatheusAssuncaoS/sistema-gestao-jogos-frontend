@@ -31,3 +31,14 @@ export interface Categoria {
   id: number;
   nome: string;
 }
+
+export interface Jogador {
+  id: string;
+  usuarioId: string;
+  nome: string;
+  email: string;
+  matriculaAssociado: string | null;
+  categoria: string | null;
+  situacaoAssociativa: SituacaoAssociativa;
+  aprovadoEm: string;
+}
