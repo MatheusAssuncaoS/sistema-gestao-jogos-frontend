@@ -14,14 +14,17 @@ export function Layout() {
   const { usuario, sair } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const emAdministracao = location.pathname.startsWith('/admin');
+  // /admin e /organizador têm shell próprio (sidebar + topbar); o Layout
+  // genérico só atende as áreas que ainda não ganharam esse tratamento.
+  const temShellProprio =
+    location.pathname.startsWith('/admin') || location.pathname.startsWith('/organizador');
 
   async function aoSair() {
     await sair();
     navigate('/login', { replace: true });
   }
 
-  if (emAdministracao) {
+  if (temShellProprio) {
     return <Outlet />;
   }
 
@@ -72,6 +75,7 @@ function linksDoPapel(papeis: Papel[]) {
   // Partidas é sempre visível: quem não é jogador ainda vê a mensagem de
   // "conta aguardando aprovação" ao clicar no link.
   links.push({ rota: '/partidas', rotulo: 'Partidas' });
+  links.push({ rota: '/meus-dados', rotulo: 'Meus dados' });
 
   if (papeis.includes('JOGADOR')) {
     links.push({ rota: '/minhas-inscricoes', rotulo: 'Minhas inscrições' });

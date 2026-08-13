@@ -9,6 +9,7 @@ export interface AuthContextValue {
   entrar: (credenciais: CredenciaisLogin) => Promise<Usuario>;
   sair: () => Promise<void>;
   recarregarUsuario: () => Promise<void>;
+  atualizarUsuario: (usuario: Usuario) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

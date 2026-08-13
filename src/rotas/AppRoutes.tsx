@@ -6,6 +6,7 @@ import { CadastroPage } from '../paginas/CadastroPage';
 import { JogadorHome } from '../paginas/JogadorHome';
 import { LoginPage } from '../paginas/LoginPage';
 import { MinhasInscricoesPage } from '../paginas/MinhasInscricoesPage';
+import { MeusDadosPage } from '../paginas/MeusDadosPage';
 import { NaoEncontradaPage } from '../paginas/NaoEncontradaPage';
 import { OrganizadorHome } from '../paginas/OrganizadorHome';
 import { RecuperarSenhaPage } from '../paginas/RecuperarSenhaPage';
@@ -43,6 +44,7 @@ export function AppRoutes() {
               sabe mostrar mensagem de "aguardando aprovação" para quem ainda
               não tem o papel JOGADOR. */}
           <Route path="/partidas" element={<JogadorHome />} />
+          <Route path="/meus-dados" element={<MeusDadosPage />} />
 
           <Route element={<RotaPorPapel papelExigido="JOGADOR" />}>
             <Route path="/minhas-inscricoes" element={<MinhasInscricoesPage />} />
