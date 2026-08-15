@@ -19,6 +19,9 @@ export function validarSenha(senha: string): string | undefined {
   if (senha.length < SENHA_TAMANHO_MINIMO || senha.length > SENHA_TAMANHO_MAXIMO) {
     return `A senha deve ter entre ${SENHA_TAMANHO_MINIMO} e ${SENHA_TAMANHO_MAXIMO} caracteres.`;
   }
+  if (!/[A-Z]/.test(senha) || !/[a-z]/.test(senha) || !/[0-9]/.test(senha) || !/[^A-Za-z0-9\s]/.test(senha)) {
+    return 'Use ao menos uma letra maiúscula, uma minúscula, um número e um caractere especial.';
+  }
   return undefined;
 }
 

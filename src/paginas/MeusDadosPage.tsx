@@ -1,18 +1,29 @@
 import { useState, type FormEvent } from 'react';
 
 import { useAuth } from '../contexto/useAuth';
-import { ApiError } from '../servicos/api';
+import { ApiError, ErroDeRede } from '../servicos/api';
+import { authService } from '../servicos/authService';
 import { usuarioService } from '../servicos/usuarioService';
-import { validarEmail } from '../validacao/cadastro';
+import { validarEmail, validarSenha } from '../validacao/cadastro';
+
+type AbaPerfil = 'perfil' | 'seguranca';
 
 export function MeusDadosPage() {
-  const { usuario, atualizarUsuario } = useAuth();
+  const { usuario, atualizarUsuario, recarregarUsuario } = useAuth();
+  const [aba, setAba] = useState<AbaPerfil>('perfil');
   const [nome, setNome] = useState(usuario?.nome ?? '');
   const [email, setEmail] = useState(usuario?.email ?? '');
   const [erros, setErros] = useState<Record<string, string>>({});
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
+  const [senhaAtual, setSenhaAtual] = useState('');
+  const [novaSenha, setNovaSenha] = useState('');
+  const [confirmacao, setConfirmacao] = useState('');
+  const [errosSenha, setErrosSenha] = useState<Record<string, string>>({});
+  const [erroSenha, setErroSenha] = useState<string | null>(null);
+  const [senhaAlterada, setSenhaAlterada] = useState(false);
+  const [trocandoSenha, setTrocandoSenha] = useState(false);
 
   async function submeter(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -48,48 +59,151 @@ export function MeusDadosPage() {
     }
   }
 
+  async function trocarSenha(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    const novosErros: Record<string, string> = {};
+    if (!senhaAtual) novosErros.senhaAtual = 'Informe a senha atual.';
+    const erroNovaSenha = validarSenha(novaSenha);
+    if (erroNovaSenha) novosErros.novaSenha = erroNovaSenha;
+    else if (novaSenha === senhaAtual) novosErros.novaSenha = 'A nova senha deve ser diferente da senha atual.';
+    if (confirmacao !== novaSenha) novosErros.confirmacao = 'A confirmação não confere com a nova senha.';
+    setErrosSenha(novosErros);
+    if (Object.keys(novosErros).length > 0) return;
+
+    setTrocandoSenha(true);
+    setErroSenha(null);
+    setSenhaAlterada(false);
+    try {
+      await authService.trocarSenha({ senhaAtual, novaSenha });
+      await recarregarUsuario();
+      setSenhaAtual('');
+      setNovaSenha('');
+      setConfirmacao('');
+      setSenhaAlterada(true);
+    } catch (falha) {
+      if (falha instanceof ApiError && falha.campos) setErrosSenha(falha.campos);
+      else if (falha instanceof ApiError) setErroSenha(falha.detail);
+      else if (falha instanceof ErroDeRede) setErroSenha('Não foi possível conectar ao servidor. Tente novamente.');
+      else setErroSenha('Não foi possível trocar a senha. Tente novamente.');
+    } finally {
+      setTrocandoSenha(false);
+    }
+  }
+
   return (
-    <section className="max-w-xl" aria-labelledby="titulo-dados">
-      <h1 id="titulo-dados" className="text-2xl font-bold">Meus dados</h1>
-      <p className="mt-2 text-gray-600">Atualize as informações usadas na sua conta.</p>
+    <section className="profile-page" aria-labelledby="titulo-dados">
+      <header className="profile-page-heading">
+        <div>
+          <span>Configurações da conta</span>
+          <h1 id="titulo-dados">Meu perfil</h1>
+          <p>Atualize suas informações pessoais e consulte seus acessos.</p>
+        </div>
+      </header>
 
-      <form onSubmit={submeter} noValidate className="mt-6 space-y-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <label className="block">
-          <span className="text-sm font-medium text-gray-700">Nome completo</span>
-          <input
-            value={nome}
-            onChange={(evento) => { setNome(evento.target.value); setSalvo(false); }}
-            autoComplete="name"
-            aria-invalid={erros.nome ? 'true' : undefined}
-            className={`mt-1 block w-full rounded-lg border px-3 py-2.5 ${erros.nome ? 'border-red-500' : 'border-gray-300'}`}
-          />
-          {erros.nome && <span className="mt-1 block text-xs text-red-600">{erros.nome}</span>}
-        </label>
+      <div className="profile-card">
+        <nav className="profile-tabs" aria-label="Configurações do perfil">
+          <button type="button" onClick={() => setAba('perfil')} className={aba === 'perfil' ? 'profile-tab-active' : ''} aria-current={aba === 'perfil' ? 'page' : undefined}>Editar perfil</button>
+          <button type="button" onClick={() => setAba('seguranca')} className={aba === 'seguranca' ? 'profile-tab-active' : ''} aria-current={aba === 'seguranca' ? 'page' : undefined}>Segurança</button>
+        </nav>
 
-        <label className="block">
-          <span className="text-sm font-medium text-gray-700">E-mail</span>
-          <input
-            type="email"
-            value={email}
-            onChange={(evento) => { setEmail(evento.target.value); setSalvo(false); }}
-            autoComplete="email"
-            aria-invalid={erros.email ? 'true' : undefined}
-            className={`mt-1 block w-full rounded-lg border px-3 py-2.5 ${erros.email ? 'border-red-500' : 'border-gray-300'}`}
-          />
-          {erros.email && <span className="mt-1 block text-xs text-red-600">{erros.email}</span>}
-        </label>
+        {aba === 'perfil' ? <form onSubmit={submeter} noValidate className="profile-form">
+          <aside className="profile-avatar-area">
+            <div className="profile-avatar" aria-hidden="true">
+              {usuario?.nome?.charAt(0).toUpperCase() ?? 'U'}
+              <span>✎</span>
+            </div>
+            <strong>{usuario?.nome}</strong>
+            <small>{usuario?.email}</small>
+          </aside>
 
-        {erroGeral && <p role="alert" className="text-sm text-red-700">{erroGeral}</p>}
-        {salvo && <p role="status" className="text-sm text-green-700">Dados atualizados com sucesso.</p>}
+          <div className="profile-fields">
+            <label>
+              <span>Nome completo</span>
+              <input
+                value={nome}
+                onChange={(evento) => { setNome(evento.target.value); setSalvo(false); }}
+                autoComplete="name"
+                aria-invalid={erros.nome ? 'true' : undefined}
+                className={erros.nome ? 'profile-input-error' : undefined}
+              />
+              {erros.nome && <small className="profile-error">{erros.nome}</small>}
+            </label>
 
-        <button
-          type="submit"
-          disabled={salvando || (nome.trim() === usuario?.nome && email.trim() === usuario?.email)}
-          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {salvando ? 'Salvando...' : 'Salvar alterações'}
-        </button>
-      </form>
+            <label>
+              <span>E-mail</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(evento) => { setEmail(evento.target.value); setSalvo(false); }}
+                autoComplete="email"
+                aria-invalid={erros.email ? 'true' : undefined}
+                className={erros.email ? 'profile-input-error' : undefined}
+              />
+              {erros.email && <small className="profile-error">{erros.email}</small>}
+            </label>
+
+            <label>
+              <span>Status da conta</span>
+              <input value={usuario?.status ?? ''} readOnly aria-readonly="true" />
+            </label>
+
+            <label>
+              <span>Perfis de acesso</span>
+              <input value={usuario?.papeis.join(', ') || 'Aguardando aprovação'} readOnly aria-readonly="true" />
+            </label>
+
+            <div className="profile-feedback">
+              {erroGeral && <p role="alert">{erroGeral}</p>}
+              {salvo && <p role="status">Dados atualizados com sucesso.</p>}
+            </div>
+
+            <div className="profile-actions">
+              <button
+                type="submit"
+                disabled={salvando || (nome.trim() === usuario?.nome && email.trim() === usuario?.email)}
+              >
+                {salvando ? 'Salvando...' : 'Salvar alterações'}
+              </button>
+            </div>
+          </div>
+        </form> : <form onSubmit={trocarSenha} noValidate className="profile-form">
+          <aside className="profile-avatar-area">
+            <div className="profile-avatar profile-security-avatar" aria-hidden="true">⌁</div>
+            <strong>Segurança da conta</strong>
+            <small>Use uma senha exclusiva e segura</small>
+          </aside>
+
+          <div className="profile-fields profile-security-fields">
+            <div className="profile-security-intro">
+              <h2>Alterar senha</h2>
+              <p>Informe sua senha atual e escolha uma nova senha entre 8 e 72 caracteres.</p>
+            </div>
+            <label>
+              <span>Senha atual</span>
+              <input type="password" value={senhaAtual} onChange={(evento) => { setSenhaAtual(evento.target.value); setSenhaAlterada(false); }} autoComplete="current-password" className={errosSenha.senhaAtual ? 'profile-input-error' : undefined} />
+              {errosSenha.senhaAtual && <small className="profile-error">{errosSenha.senhaAtual}</small>}
+            </label>
+            <div />
+            <label>
+              <span>Nova senha</span>
+              <input type="password" value={novaSenha} onChange={(evento) => { setNovaSenha(evento.target.value); setSenhaAlterada(false); }} autoComplete="new-password" className={errosSenha.novaSenha ? 'profile-input-error' : undefined} />
+              {errosSenha.novaSenha && <small className="profile-error">{errosSenha.novaSenha}</small>}
+            </label>
+            <label>
+              <span>Confirme a nova senha</span>
+              <input type="password" value={confirmacao} onChange={(evento) => { setConfirmacao(evento.target.value); setSenhaAlterada(false); }} autoComplete="new-password" className={errosSenha.confirmacao ? 'profile-input-error' : undefined} />
+              {errosSenha.confirmacao && <small className="profile-error">{errosSenha.confirmacao}</small>}
+            </label>
+            <div className="profile-feedback">
+              {erroSenha && <p role="alert">{erroSenha}</p>}
+              {senhaAlterada && <p role="status">Senha alterada com sucesso.</p>}
+            </div>
+            <div className="profile-actions">
+              <button type="submit" disabled={trocandoSenha}>{trocandoSenha ? 'Alterando...' : 'Alterar senha'}</button>
+            </div>
+          </div>
+        </form>}
+      </div>
     </section>
   );
 }

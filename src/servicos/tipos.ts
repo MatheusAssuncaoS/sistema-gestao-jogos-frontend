@@ -25,6 +25,7 @@ export interface UsuarioResumo {
   email: string;
   status: StatusUsuario;
   papeis: Papel[];
+  versao: number;
 }
 
 export type SituacaoAssociativa = 'PENDENTE' | 'REGULAR' | 'IRREGULAR';
@@ -39,6 +40,7 @@ export interface CadastroPendente {
 export interface Categoria {
   id: number;
   nome: string;
+  peso: number;
 }
 
 export interface Jogador {

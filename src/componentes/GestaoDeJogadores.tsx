@@ -1,554 +1,171 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { Search } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 
-import { adminJogadorService, type DadosRedefinicaoSenha } from '../servicos/adminJogadorService';
+import { adminJogadorService } from '../servicos/adminJogadorService';
 import { ApiError } from '../servicos/api';
-import { validarSenha } from '../validacao/cadastro';
-import type { CadastroPendente, Categoria, Jogador, SituacaoAssociativa } from '../servicos/tipos';
+import type { CadastroPendente, Categoria, SituacaoAssociativa } from '../servicos/tipos';
+import { AvisoTemporario } from './ui/AvisoTemporario';
+import { Confirmacao } from './ui/Confirmacao';
+import { Paginacao } from './ui/Paginacao';
+import { Sheet } from './ui/Sheet';
 
-type Aba = 'pendentes' | 'recusados' | 'ativos';
+type Aba = 'pendentes' | 'recusados';
+type Etapa = 'analise' | 'dados' | 'revisao';
 
-interface Aviso {
-  texto: string;
-  tom: 'verde' | 'neutro';
-}
+const formatador = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
-const formatador = new Intl.DateTimeFormat('pt-BR', {
-  dateStyle: 'short',
-  timeStyle: 'short',
-});
-
-function formatarData(valor: string) {
-  const data = new Date(valor);
-  return Number.isNaN(data.getTime()) ? '' : formatador.format(data);
-}
-
-function mensagemDeErro(falha: unknown): string {
+function mensagemDeErro(falha: unknown) {
   if (falha instanceof ApiError) {
-    if (falha.status === 401 || falha.status === 403) {
-      return 'Sessão de administrador expirada. Entre novamente.';
-    }
+    if (falha.status === 401 || falha.status === 403) return 'Sua sessão expirou. Entre novamente.';
+    if (falha.status === 409) return 'Este cadastro foi atualizado por outro administrador. Atualize a fila.';
     return falha.detail;
   }
   return 'Não foi possível completar a operação. Tente novamente.';
 }
 
-/**
- * UC27: aprovação, recusa e reabertura de cadastros.
- *
- * Aprovar exige categoria e situação associativa (o backend recusa sem
- * isso), então o botão "Aprovar" abre um formulário inline em vez de
- * disparar a requisição direto. Recusar e reabrir não precisam de dados
- * extras; recusar pede confirmação por ser a decisão original, reabrir não
- * pede porque já é a própria reversão dela.
- */
 export function GestaoDeJogadores() {
+  const queryClient = useQueryClient();
+  const [parametros, setParametros] = useSearchParams();
   const [aba, setAba] = useState<Aba>('pendentes');
   const [cadastros, setCadastros] = useState<CadastroPendente[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [ativos, setAtivos] = useState<Jogador[]>([]);
-  const [buscaInput, setBuscaInput] = useState('');
   const [busca, setBusca] = useState('');
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [emAndamento, setEmAndamento] = useState<string | null>(null);
-  const [aviso, setAviso] = useState<Aviso | null>(null);
-  const [formularioAberto, setFormularioAberto] = useState<string | null>(null);
-
-  // Debounce: só dispara a busca 300ms depois de parar de digitar, para não
-  // gerar uma requisição por tecla.
-  useEffect(() => {
-    const temporizador = setTimeout(() => setBusca(buscaInput), 300);
-    return () => clearTimeout(temporizador);
-  }, [buscaInput]);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const [selecionado, setSelecionado] = useState<CadastroPendente | null>(null);
+  const [etapa, setEtapa] = useState<Etapa>('analise');
+  const [emAndamento, setEmAndamento] = useState(false);
+  const [categoriaId, setCategoriaId] = useState<number | ''>('');
+  const [situacao, setSituacao] = useState<SituacaoAssociativa>('REGULAR');
+  const [matricula, setMatricula] = useState('');
+  const [pagina, setPagina] = useState(1);
+  const [itensPorPagina, setItensPorPagina] = useState(10);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
     setErro(null);
     try {
-      if (aba === 'ativos') {
-        setAtivos(await adminJogadorService.listarAtivos(busca));
-      } else {
-        const [lista, categoriasAtivas] = await Promise.all([
-          aba === 'pendentes'
-            ? adminJogadorService.listarPendentes()
-            : adminJogadorService.listarRecusados(),
-          adminJogadorService.listarCategorias(),
-        ]);
-        setCadastros(lista);
-        setCategorias(categoriasAtivas);
-      }
+      const [lista, categoriasAtivas] = await Promise.all([
+        aba === 'pendentes' ? adminJogadorService.listarPendentes() : adminJogadorService.listarRecusados(),
+        adminJogadorService.listarCategorias(),
+      ]);
+      setCadastros(lista);
+      setCategorias(categoriasAtivas);
+      setCategoriaId((atual) => atual || categoriasAtivas[0]?.id || '');
     } catch (falha) {
       setErro(mensagemDeErro(falha));
     } finally {
       setCarregando(false);
     }
-  }, [aba, busca]);
+  }, [aba]);
 
+  useEffect(() => { void carregar(); }, [carregar]);
   useEffect(() => {
-    carregar();
-  }, [carregar]);
+    const usuarioId = parametros.get('usuario');
+    const cadastro = cadastros.find((item) => item.usuarioId === usuarioId);
+    if (cadastro) {
+      setSelecionado(cadastro);
+      setEtapa('analise');
+      setParametros({}, { replace: true });
+    }
+  }, [cadastros, parametros, setParametros]);
 
-  function trocarAba(novaAba: Aba) {
-    setAba(novaAba);
-    setFormularioAberto(null);
-    setAviso(null);
+  const filtrados = useMemo(() => {
+    const termo = busca.trim().toLocaleLowerCase('pt-BR');
+    return cadastros.filter((cadastro) => !termo || cadastro.nome.toLocaleLowerCase('pt-BR').includes(termo) || cadastro.email.toLocaleLowerCase('pt-BR').includes(termo));
+  }, [busca, cadastros]);
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / itensPorPagina));
+  const cadastrosDaPagina = filtrados.slice((pagina - 1) * itensPorPagina, pagina * itensPorPagina);
+  useEffect(() => { setPagina(1); }, [busca, aba]);
+  useEffect(() => { if (pagina > totalPaginas) setPagina(totalPaginas); }, [pagina, totalPaginas]);
+
+  function abrir(cadastro: CadastroPendente) {
+    setSelecionado(cadastro);
+    setEtapa('analise');
+    setMatricula('');
+    setSituacao('REGULAR');
+    setCategoriaId(categorias[0]?.id ?? '');
   }
 
-  async function aprovar(
-    cadastro: CadastroPendente,
-    dados: { matriculaAssociado: string; categoriaId: number; situacaoAssociativa: SituacaoAssociativa }
-  ) {
-    setEmAndamento(cadastro.usuarioId);
+  async function aprovar() {
+    if (!selecionado || categoriaId === '') return;
+    setEmAndamento(true);
     setErro(null);
     try {
-      await adminJogadorService.aprovar(cadastro.usuarioId, {
-        matriculaAssociado: dados.matriculaAssociado || undefined,
-        categoriaId: dados.categoriaId,
-        situacaoAssociativa: dados.situacaoAssociativa,
-      });
-      setCadastros((atual) => atual.filter((c) => c.usuarioId !== cadastro.usuarioId));
-      setFormularioAberto(null);
-      setAviso({ texto: `Cadastro de ${cadastro.nome} aprovado.`, tom: 'verde' });
+      await adminJogadorService.aprovar(selecionado.usuarioId, { categoriaId: Number(categoriaId), situacaoAssociativa: situacao, matriculaAssociado: matricula || undefined });
+      setCadastros((lista) => lista.filter((item) => item.usuarioId !== selecionado.usuarioId));
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'jogadores', 'pendentes'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'usuarios'] });
+      setAviso(`Cadastro de ${selecionado.nome} aprovado.`);
+      setSelecionado(null);
     } catch (falha) {
       setErro(mensagemDeErro(falha));
     } finally {
-      setEmAndamento(null);
+      setEmAndamento(false);
     }
   }
 
   async function recusar(cadastro: CadastroPendente) {
-    if (!window.confirm(`Recusar o cadastro de ${cadastro.nome}?`)) {
-      return;
-    }
-
-    setEmAndamento(cadastro.usuarioId);
+    setEmAndamento(true);
     setErro(null);
     try {
       await adminJogadorService.recusar(cadastro.usuarioId);
-      setCadastros((atual) => atual.filter((c) => c.usuarioId !== cadastro.usuarioId));
-      setAviso({ texto: `Cadastro de ${cadastro.nome} recusado.`, tom: 'neutro' });
+      setCadastros((lista) => lista.filter((item) => item.usuarioId !== cadastro.usuarioId));
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'jogadores', 'pendentes'] });
+      setAviso(`Cadastro de ${cadastro.nome} recusado.`);
+      setSelecionado(null);
     } catch (falha) {
       setErro(mensagemDeErro(falha));
     } finally {
-      setEmAndamento(null);
+      setEmAndamento(false);
     }
   }
 
   async function reabrir(cadastro: CadastroPendente) {
-    setEmAndamento(cadastro.usuarioId);
+    setEmAndamento(true);
     setErro(null);
     try {
       await adminJogadorService.reabrir(cadastro.usuarioId);
-      setCadastros((atual) => atual.filter((c) => c.usuarioId !== cadastro.usuarioId));
-      setAviso({
-        texto: `Cadastro de ${cadastro.nome} voltou para a fila de aprovação.`,
-        tom: 'neutro',
-      });
+      setCadastros((lista) => lista.filter((item) => item.usuarioId !== cadastro.usuarioId));
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'jogadores', 'pendentes'] });
+      setAviso(`Cadastro de ${cadastro.nome} voltou para a fila de análise.`);
+      setSelecionado(null);
     } catch (falha) {
       setErro(mensagemDeErro(falha));
     } finally {
-      setEmAndamento(null);
+      setEmAndamento(false);
     }
   }
 
-  async function redefinirSenha(jogador: Jogador, dados: DadosRedefinicaoSenha) {
-    setEmAndamento(jogador.usuarioId);
-    setErro(null);
-    try {
-      await adminJogadorService.redefinirSenha(jogador.usuarioId, dados);
-      setFormularioAberto(null);
-      setAviso({ texto: `Senha de ${jogador.nome} redefinida.`, tom: 'neutro' });
-    } catch (falha) {
-      setErro(mensagemDeErro(falha));
-    } finally {
-      setEmAndamento(null);
-    }
+  function revisar(evento: FormEvent) {
+    evento.preventDefault();
+    if (categoriaId !== '') setEtapa('revisao');
   }
 
   return (
-    <section id="jogadores" aria-labelledby="titulo-pendentes" className="admin-card">
-      <header className="admin-card-header">
-        <div>
-          <h2 id="titulo-pendentes">Gestão de jogadores</h2>
-          <p>Aprove cadastros e gerencie os acessos dos jogadores.</p>
-        </div>
-        <button
-          type="button"
-          onClick={carregar}
-          disabled={carregando}
-          className="admin-button admin-button-secondary"
-        >
-          <span aria-hidden="true">↻</span> Atualizar
-        </button>
-      </header>
-
-      <div className="admin-tabs">
-        <AbaBotao rotulo="Pendentes" ativa={aba === 'pendentes'} onClick={() => trocarAba('pendentes')} />
-        <AbaBotao rotulo="Recusados" ativa={aba === 'recusados'} onClick={() => trocarAba('recusados')} />
-        <AbaBotao rotulo="Ativos" ativa={aba === 'ativos'} onClick={() => trocarAba('ativos')} />
+    <section className="admin-card admin-users-page" aria-labelledby="titulo-cadastros">
+      <header className="admin-card-header"><div><h1 id="titulo-cadastros">Cadastros</h1><p>Analise e acompanhe solicitações de novos jogadores.</p></div><button type="button" onClick={() => void carregar()} disabled={carregando} className="admin-button admin-button-secondary">Atualizar</button></header>
+      <div className="admin-users-panel">
+        <div className="admin-tabs admin-registration-tabs"><button type="button" className={`admin-tab ${aba === 'pendentes' ? 'admin-tab-active' : ''}`} onClick={() => { setAba('pendentes'); setAviso(null); }}>Pendentes</button><button type="button" className={`admin-tab ${aba === 'recusados' ? 'admin-tab-active' : ''}`} onClick={() => { setAba('recusados'); setAviso(null); }}>Recusados</button></div>
+        <div className="admin-users-toolbar"><label className="admin-users-search"><span>Buscar</span><div><input type="search" value={busca} onChange={(evento) => setBusca(evento.target.value)} placeholder="Nome ou e-mail" /><Search aria-hidden="true" /></div></label></div>
+        {aviso && <AvisoTemporario mensagem={aviso} aoFechar={() => setAviso(null)} />}
+        {erro && <div className="admin-inline-error" role="alert"><span>{erro}</span><button type="button" onClick={() => void carregar()}>Tentar novamente</button></div>}
+        {carregando && <div className="admin-table-skeleton" aria-label="Carregando cadastros"><span /><span /><span /></div>}
+        {!carregando && !erro && filtrados.length === 0 && <div className="admin-empty-state"><h3>{busca ? 'Nenhum cadastro encontrado' : aba === 'pendentes' ? 'Nenhum cadastro pendente' : 'Nenhum cadastro recusado'}</h3><p>{busca ? 'Tente buscar por outro nome ou e-mail.' : aba === 'pendentes' ? 'Novas solicitações aparecerão aqui.' : 'Cadastros recusados aparecerão aqui.'}</p>{busca && <button className="admin-button admin-button-secondary" onClick={() => setBusca('')}>Limpar busca</button>}</div>}
+        {!carregando && filtrados.length > 0 && <><div className="admin-users-table-wrap"><table className="admin-users-table admin-registration-table"><thead><tr><th>Solicitante</th><th>Solicitado em</th><th>Status</th><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{cadastrosDaPagina.map((cadastro) => <tr key={cadastro.usuarioId} onClick={() => abrir(cadastro)}><td><strong>{cadastro.nome}</strong><small>{cadastro.email}</small></td><td>{formatador.format(new Date(cadastro.cadastradoEm))}</td><td><span className={`admin-status admin-status-${aba === 'pendentes' ? 'pendente' : 'recusado'}`}>{aba === 'pendentes' ? 'Aguardando' : 'Recusado'}</span></td><td className="admin-user-action"><button type="button" aria-label={`Analisar ${cadastro.nome}`} onClick={(evento) => { evento.stopPropagation(); abrir(cadastro); }}>›</button></td></tr>)}</tbody></table></div><Paginacao total={filtrados.length} rotuloSingular="cadastro" rotuloPlural="cadastros" pagina={pagina} totalPaginas={totalPaginas} itensPorPagina={itensPorPagina} aoMudarPagina={setPagina} aoMudarItensPorPagina={(quantidade) => { setItensPorPagina(quantidade); setPagina(1); }} /></>}
       </div>
 
-      {aba === 'ativos' && (
-        <input
-          type="search"
-          value={buscaInput}
-          onChange={(evento) => setBuscaInput(evento.target.value)}
-          placeholder="Buscar por nome ou e-mail"
-          className="admin-search"
-        />
-      )}
-
-      <p
-        role="status"
-        aria-live="polite"
-        className={`mt-2 min-h-5 text-sm ${aviso?.tom === 'verde' ? 'text-green-700' : 'text-gray-700'}`}
-      >
-        {aviso?.texto}
-      </p>
-
-      {erro && (
-        <p className="my-2 text-sm text-red-600">
-          {erro}{' '}
-          <button type="button" onClick={carregar} className="text-blue-600 hover:underline">
-            Tentar de novo
-          </button>
-        </p>
-      )}
-
-      {carregando && <p className="text-gray-600">Carregando...</p>}
-
-      {aba === 'ativos' ? (
-        <>
-          {!carregando && !erro && ativos.length === 0 && (
-            <p className="text-gray-600">
-              {busca.trim() === '' ? 'Nenhum jogador ativo.' : 'Nenhum jogador encontrado.'}
-            </p>
-          )}
-
-          {ativos.length > 0 && (
-            <ul className="admin-record-list">
-              {ativos.map((jogador) => (
-                <li key={jogador.usuarioId} className="admin-record">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <strong className="text-base">{jogador.nome}</strong>
-                      <div className="text-sm text-gray-600">{jogador.email}</div>
-                      {jogador.categoria && (
-                        <div className="text-sm text-gray-600">
-                          {jogador.categoria} · {jogador.situacaoAssociativa}
-                        </div>
-                      )}
-                    </div>
-
-                    {formularioAberto !== jogador.usuarioId && (
-                      <button
-                        type="button"
-                        onClick={() => setFormularioAberto(jogador.usuarioId)}
-                        disabled={emAndamento !== null}
-                        className="admin-button admin-button-primary"
-                      >
-                        Redefinir senha
-                      </button>
-                    )}
-                  </div>
-
-                  {formularioAberto === jogador.usuarioId && (
-                    <FormularioDeRedefinicaoSenha
-                      enviando={emAndamento === jogador.usuarioId}
-                      aoConfirmar={(dados) => redefinirSenha(jogador, dados)}
-                      aoCancelar={() => setFormularioAberto(null)}
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      ) : (
-        <>
-          {!carregando && !erro && cadastros.length === 0 && (
-            <p className="text-gray-600">
-              {aba === 'pendentes'
-                ? 'Nenhum cadastro aguardando aprovação no momento.'
-                : 'Nenhum cadastro recusado no momento.'}
-            </p>
-          )}
-
-          {cadastros.length > 0 && (
-            <ul className="admin-record-list">
-              {cadastros.map((cadastro) => (
-                <li key={cadastro.usuarioId} className="admin-record">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <strong className="text-base">{cadastro.nome}</strong>
-                      <div className="text-sm text-gray-600">{cadastro.email}</div>
-                      {cadastro.cadastradoEm && (
-                        <div className="text-sm text-gray-600">
-                          Cadastrado em {formatarData(cadastro.cadastradoEm)}
-                        </div>
-                      )}
-                    </div>
-
-                    {aba === 'pendentes' && formularioAberto !== cadastro.usuarioId && (
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setFormularioAberto(cadastro.usuarioId)}
-                          disabled={emAndamento !== null}
-                          className="admin-button admin-button-success"
-                        >
-                          Aprovar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => recusar(cadastro)}
-                          disabled={emAndamento !== null}
-                          className="admin-button admin-button-danger"
-                        >
-                          {emAndamento === cadastro.usuarioId ? 'Recusando...' : 'Recusar'}
-                        </button>
-                      </div>
-                    )}
-
-                    {aba === 'recusados' && (
-                      <button
-                        type="button"
-                        onClick={() => reabrir(cadastro)}
-                        disabled={emAndamento !== null}
-                        className="admin-button admin-button-secondary"
-                      >
-                        {emAndamento === cadastro.usuarioId ? 'Reabrindo...' : 'Voltar para pendentes'}
-                      </button>
-                    )}
-                  </div>
-
-                  {aba === 'pendentes' && formularioAberto === cadastro.usuarioId && (
-                    <FormularioDeAprovacao
-                      categorias={categorias}
-                      enviando={emAndamento === cadastro.usuarioId}
-                      aoConfirmar={(dados) => aprovar(cadastro, dados)}
-                      aoCancelar={() => setFormularioAberto(null)}
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
+      <Sheet aberto={selecionado !== null} aoAlterar={(aberto) => { if (!aberto && !emAndamento) setSelecionado(null); }} titulo={selecionado?.nome ?? 'Cadastro'} descricao={selecionado?.email}>
+        {selecionado && aba === 'pendentes' && <div className="admin-approval-flow"><ol className="admin-stepper"><li className={etapa === 'analise' ? 'active' : ''}>1. Análise</li><li className={etapa === 'dados' ? 'active' : ''}>2. Dados</li><li className={etapa === 'revisao' ? 'active' : ''}>3. Revisão</li></ol>
+          {etapa === 'analise' && <div className="admin-sheet-section"><h3>Dados enviados</h3><dl><dt>Nome completo</dt><dd>{selecionado.nome}</dd><dt>E-mail</dt><dd>{selecionado.email}</dd><dt>Solicitado em</dt><dd>{formatador.format(new Date(selecionado.cadastradoEm))}</dd></dl><div className="admin-sheet-actions"><Confirmacao acionador={<button type="button" className="admin-button admin-button-danger">Recusar cadastro</button>} titulo="Recusar cadastro?" descricao="O cadastro será movido para a lista de recusados. Nenhum motivo é necessário." rotuloConfirmacao="Recusar cadastro" processando={emAndamento} aoConfirmar={() => void recusar(selecionado)} /><button type="button" className="admin-button admin-button-primary" onClick={() => setEtapa('dados')}>Continuar aprovação</button></div></div>}
+          {etapa === 'dados' && <form className="admin-sheet-section admin-sheet-form" onSubmit={revisar}><label>Categoria<select value={categoriaId} onChange={(evento) => setCategoriaId(Number(evento.target.value))} required>{categorias.map((categoria) => <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>)}</select></label><label>Situação associativa<select value={situacao} onChange={(evento) => setSituacao(evento.target.value as SituacaoAssociativa)}><option value="REGULAR">Regular</option><option value="IRREGULAR">Irregular</option><option value="PENDENTE">Pendente</option></select></label><label>Matrícula <span>(opcional)</span><input value={matricula} onChange={(evento) => setMatricula(evento.target.value)} /></label><div className="admin-sheet-actions"><button type="button" className="admin-button admin-button-secondary" onClick={() => setEtapa('analise')}>Voltar</button><button type="submit" className="admin-button admin-button-primary">Revisar aprovação</button></div></form>}
+          {etapa === 'revisao' && <div className="admin-sheet-section"><h3>Revise antes de aprovar</h3><dl><dt>Jogador</dt><dd>{selecionado.nome}</dd><dt>Categoria</dt><dd>{categorias.find((categoria) => categoria.id === Number(categoriaId))?.nome}</dd><dt>Situação</dt><dd>{situacao}</dd><dt>Matrícula</dt><dd>{matricula || 'Não informada'}</dd></dl>{erro && <p className="admin-sheet-error" role="alert">{erro}</p>}<div className="admin-sheet-actions"><button type="button" className="admin-button admin-button-secondary" disabled={emAndamento} onClick={() => setEtapa('dados')}>Voltar</button><button type="button" className="admin-button admin-button-primary" disabled={emAndamento} onClick={() => void aprovar()}>{emAndamento ? 'Aprovando...' : 'Aprovar cadastro'}</button></div></div>}
+        </div>}
+        {selecionado && aba === 'recusados' && <div className="admin-sheet-section"><h3>Cadastro recusado</h3><dl><dt>Nome completo</dt><dd>{selecionado.nome}</dd><dt>E-mail</dt><dd>{selecionado.email}</dd><dt>Solicitado em</dt><dd>{formatador.format(new Date(selecionado.cadastradoEm))}</dd></dl><div className="admin-sheet-actions"><button type="button" className="admin-button admin-button-primary" disabled={emAndamento} onClick={() => void reabrir(selecionado)}>{emAndamento ? 'Reabrindo...' : 'Voltar para pendentes'}</button></div></div>}
+      </Sheet>
     </section>
-  );
-}
-
-function AbaBotao({ rotulo, ativa, onClick }: { rotulo: string; ativa: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={ativa ? 'page' : undefined}
-      className={`admin-tab ${ativa ? 'admin-tab-active' : ''}`}
-    >
-      {rotulo}
-    </button>
-  );
-}
-
-interface FormularioDeAprovacaoProps {
-  categorias: Categoria[];
-  enviando: boolean;
-  aoConfirmar: (dados: {
-    matriculaAssociado: string;
-    categoriaId: number;
-    situacaoAssociativa: SituacaoAssociativa;
-  }) => void;
-  aoCancelar: () => void;
-}
-
-function FormularioDeAprovacao({
-  categorias,
-  enviando,
-  aoConfirmar,
-  aoCancelar,
-}: FormularioDeAprovacaoProps) {
-  const [matricula, setMatricula] = useState('');
-  const [categoriaId, setCategoriaId] = useState<number | ''>(categorias[0]?.id ?? '');
-  const [situacao, setSituacao] = useState<SituacaoAssociativa>('REGULAR');
-
-  function submeter(evento: FormEvent<HTMLFormElement>) {
-    evento.preventDefault();
-    if (categoriaId === '') return;
-
-    aoConfirmar({
-      matriculaAssociado: matricula,
-      categoriaId: Number(categoriaId),
-      situacaoAssociativa: situacao,
-    });
-  }
-
-  return (
-    <form onSubmit={submeter} className="mt-4 flex flex-wrap items-end gap-3 border-t border-gray-100 pt-4">
-      <label className="block">
-        <span className="text-xs font-medium text-gray-700">Categoria</span>
-        <select
-          value={categoriaId}
-          onChange={(evento) =>
-            setCategoriaId(evento.target.value === '' ? '' : Number(evento.target.value))
-          }
-          required
-          className="mt-1 block rounded border border-gray-300 px-2 py-1.5 text-sm"
-        >
-          <option value="" disabled>
-            Selecione
-          </option>
-          {categorias.map((categoria) => (
-            <option key={categoria.id} value={categoria.id}>
-              {categoria.nome}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="block">
-        <span className="text-xs font-medium text-gray-700">Situação associativa</span>
-        <select
-          value={situacao}
-          onChange={(evento) => setSituacao(evento.target.value as SituacaoAssociativa)}
-          className="mt-1 block rounded border border-gray-300 px-2 py-1.5 text-sm"
-        >
-          <option value="REGULAR">Regular</option>
-          <option value="IRREGULAR">Irregular</option>
-          <option value="PENDENTE">Pendente</option>
-        </select>
-      </label>
-
-      <label className="block">
-        <span className="text-xs font-medium text-gray-700">Matrícula (opcional)</span>
-        <input
-          type="text"
-          value={matricula}
-          onChange={(evento) => setMatricula(evento.target.value)}
-          className="mt-1 block rounded border border-gray-300 px-2 py-1.5 text-sm"
-        />
-      </label>
-
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={enviando || categorias.length === 0}
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {enviando ? 'Aprovando...' : 'Confirmar aprovação'}
-        </button>
-        <button
-          type="button"
-          onClick={aoCancelar}
-          disabled={enviando}
-          className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-        >
-          Cancelar
-        </button>
-      </div>
-    </form>
-  );
-}
-
-/**
- * Gera uma senha provisória legível, sem caracteres fáceis de confundir
- * (0/O, 1/l/I), já que o administrador normalmente vai repassá-la à pessoa
- * por telefone ou mensagem.
- */
-function gerarSenhaAleatoria(): string {
-  const caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  const valores = new Uint32Array(14);
-  crypto.getRandomValues(valores);
-
-  return Array.from(valores, (valor) => caracteres[valor % caracteres.length]).join('');
-}
-
-interface FormularioDeRedefinicaoSenhaProps {
-  enviando: boolean;
-  aoConfirmar: (dados: DadosRedefinicaoSenha) => void;
-  aoCancelar: () => void;
-}
-
-function FormularioDeRedefinicaoSenha({
-  enviando,
-  aoConfirmar,
-  aoCancelar,
-}: FormularioDeRedefinicaoSenhaProps) {
-  const [senha, setSenha] = useState('');
-  const [exigirTroca, setExigirTroca] = useState(true);
-  const [erro, setErro] = useState<string | undefined>();
-
-  function submeter(evento: FormEvent<HTMLFormElement>) {
-    evento.preventDefault();
-
-    const erroSenha = validarSenha(senha);
-    if (erroSenha) {
-      setErro(erroSenha);
-      return;
-    }
-
-    aoConfirmar({ novaSenha: senha, exigirTrocaNoProximoLogin: exigirTroca });
-  }
-
-  return (
-    <form onSubmit={submeter} className="mt-4 flex flex-wrap items-end gap-3 border-t border-gray-100 pt-4">
-      <label className="block">
-        <span className="text-xs font-medium text-gray-700">Senha provisória</span>
-        <div className="mt-1 flex gap-2">
-          <input
-            type="text"
-            value={senha}
-            onChange={(evento) => {
-              setSenha(evento.target.value);
-              setErro(undefined);
-            }}
-            aria-invalid={erro ? 'true' : undefined}
-            className={`block rounded border px-2 py-1.5 text-sm ${
-              erro ? 'border-red-500' : 'border-gray-300'
-            }`}
-          />
-          <button
-            type="button"
-            onClick={() => {
-              setSenha(gerarSenhaAleatoria());
-              setErro(undefined);
-            }}
-            className="rounded border border-gray-300 px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            Gerar
-          </button>
-        </div>
-        {erro && <span className="mt-1 block text-xs text-red-600">{erro}</span>}
-      </label>
-
-      <label className="flex items-center gap-2 text-sm text-gray-700">
-        <input
-          type="checkbox"
-          checked={exigirTroca}
-          onChange={(evento) => setExigirTroca(evento.target.checked)}
-        />
-        Exigir troca no próximo login
-      </label>
-
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={enviando}
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {enviando ? 'Redefinindo...' : 'Confirmar redefinição'}
-        </button>
-        <button
-          type="button"
-          onClick={aoCancelar}
-          disabled={enviando}
-          className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-        >
-          Cancelar
-        </button>
-      </div>
-    </form>
   );
 }
