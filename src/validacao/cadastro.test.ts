@@ -11,8 +11,8 @@ import {
 const DADOS_VALIDOS = {
   nome: 'Maria Silva',
   email: 'maria@example.com',
-  senha: 'senhaSegura123',
-  confirmacao: 'senhaSegura123',
+  senha: 'SenhaSegura123!',
+  confirmacao: 'SenhaSegura123!',
 };
 
 describe('validarCadastro', () => {
@@ -42,8 +42,8 @@ describe('validarCadastro', () => {
   });
 
   it('aceita senha nos limites de 8 e 72 caracteres', () => {
-    const minima = 'a'.repeat(SENHA_TAMANHO_MINIMO);
-    const maxima = 'a'.repeat(SENHA_TAMANHO_MAXIMO);
+    const minima = 'Aa1!' + 'a'.repeat(SENHA_TAMANHO_MINIMO - 4);
+    const maxima = 'Aa1!' + 'a'.repeat(SENHA_TAMANHO_MAXIMO - 4);
 
     expect(validarCadastro({ ...DADOS_VALIDOS, senha: minima, confirmacao: minima }).senha).toBeUndefined();
     expect(validarCadastro({ ...DADOS_VALIDOS, senha: maxima, confirmacao: maxima }).senha).toBeUndefined();
@@ -83,7 +83,14 @@ describe('validarSenha', () => {
   });
 
   it('aceita senha dentro da faixa permitida', () => {
-    expect(validarSenha('a'.repeat(SENHA_TAMANHO_MINIMO))).toBeUndefined();
-    expect(validarSenha('a'.repeat(SENHA_TAMANHO_MAXIMO))).toBeUndefined();
+    expect(validarSenha('Aa1!' + 'a'.repeat(SENHA_TAMANHO_MINIMO - 4))).toBeUndefined();
+    expect(validarSenha('Aa1!' + 'a'.repeat(SENHA_TAMANHO_MAXIMO - 4))).toBeUndefined();
+  });
+
+  it('exige maiúscula, minúscula, número e caractere especial', () => {
+    expect(validarSenha('senha123!')).toBeDefined();
+    expect(validarSenha('SENHA123!')).toBeDefined();
+    expect(validarSenha('SenhaForte!')).toBeDefined();
+    expect(validarSenha('Senha1234')).toBeDefined();
   });
 });

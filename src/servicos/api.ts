@@ -104,6 +104,12 @@ export const api = {
       body: corpo !== undefined ? JSON.stringify(corpo) : undefined,
     }),
 
+  patch: <T>(caminho: string, corpo?: unknown) =>
+    requisicao<T>(caminho, {
+      method: 'PATCH',
+      body: corpo !== undefined ? JSON.stringify(corpo) : undefined,
+    }),
+
   delete: <T>(caminho: string) =>
     requisicao<T>(caminho, {
       method: 'DELETE',

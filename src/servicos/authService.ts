@@ -12,6 +12,11 @@ export interface DadosCadastro {
   senha: string;
 }
 
+export interface DadosTrocaSenha {
+  senhaAtual: string;
+  novaSenha: string;
+}
+
 /**
  * Funções específicas dos endpoints de autenticação. Cada tela chama estas
  * funções em vez de fetch direto, o que mantém a URL do endpoint em um
@@ -27,4 +32,7 @@ export const authService = {
 
   cadastrar: (dados: DadosCadastro) =>
     api.post<Usuario>('/api/auth/cadastro', dados),
+
+  trocarSenha: (dados: DadosTrocaSenha) =>
+    api.post<void>('/api/auth/trocar-senha', dados),
 };

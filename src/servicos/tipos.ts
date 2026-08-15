@@ -16,6 +16,16 @@ export interface Usuario {
   email: string;
   status: StatusUsuario;
   papeis: Papel[];
+  senhaProvisoria: boolean;
+}
+
+export interface UsuarioResumo {
+  id: string;
+  nome: string;
+  email: string;
+  status: StatusUsuario;
+  papeis: Papel[];
+  versao: number;
 }
 
 export type SituacaoAssociativa = 'PENDENTE' | 'REGULAR' | 'IRREGULAR';
@@ -30,6 +40,7 @@ export interface CadastroPendente {
 export interface Categoria {
   id: number;
   nome: string;
+  peso: number;
 }
 
 export interface Jogador {
@@ -41,4 +52,61 @@ export interface Jogador {
   categoria: string | null;
   situacaoAssociativa: SituacaoAssociativa;
   aprovadoEm: string;
+}
+
+export type StatusPartida = 'RASCUNHO' | 'ABERTA' | 'LOTADA' | 'ENCERRADA' | 'FINALIZADA' | 'CANCELADA';
+
+export interface Modalidade {
+  id: string;
+  nome: string;
+}
+
+export interface LocalPartida {
+  id: string;
+  nome: string;
+  descricao: string | null;
+}
+
+export interface Equipe {
+  id: string;
+  nome: string;
+  cor: string;
+  capacidade: number;
+}
+
+export interface Partida {
+  id: string;
+  modalidade: string;
+  local: string;
+  categoria: string | null;
+  inicio: string;
+  capacidade: number;
+  status: StatusPartida;
+  inscricoesAbremEm: string | null;
+  inscricoesEncerramEm: string | null;
+  escalaPublicada: boolean;
+  versao: number;
+  equipes: Equipe[];
+}
+
+export type StatusInscricao = 'CONFIRMADA' | 'LISTA_ESPERA' | 'CANCELADA' | 'PRESENTE' | 'AUSENTE';
+
+export interface Inscrito {
+  inscricaoId: string;
+  jogadorId: string;
+  nome: string;
+  categoria: string | null;
+  status: StatusInscricao;
+  dataSolicitacao: string;
+}
+
+export interface InscricaoDoJogador {
+  id: string;
+  partidaId: string;
+  inicioDaPartida: string;
+  local: string;
+  status: StatusInscricao;
+  dataSolicitacao: string;
+  dataConfirmacao: string | null;
+  equipe: string | null;
 }
