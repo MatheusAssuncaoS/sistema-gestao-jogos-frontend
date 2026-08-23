@@ -9,6 +9,7 @@ import { AdminCadastrosPage } from '../paginas/AdminCadastrosPage';
 import { AdminMinhaContaPage } from '../paginas/AdminMinhaContaPage';
 import { AdminConfiguracaoListaPage } from '../paginas/AdminConfiguracaoListaPage';
 import { AdminCalendarioPage } from '../paginas/AdminCalendarioPage';
+import { ArbitroPage } from '../paginas/ArbitroPage';
 import { CadastroPage } from '../paginas/CadastroPage';
 import { JogadorHome } from '../paginas/JogadorHome';
 import { LoginPage } from '../paginas/LoginPage';
@@ -59,6 +60,10 @@ export function AppRoutes() {
 
           <Route element={<RotaPorPapel papelExigido="ORGANIZADOR" />}>
             <Route path="/organizador" element={<OrganizadorHome />} />
+          </Route>
+
+          <Route element={<RotaPorPapel papelExigido="ARBITRO" />}>
+            <Route path="/arbitro" element={<ArbitroPage />} />
           </Route>
 
           <Route element={<RotaPorPapel papelExigido="ADMINISTRADOR" />}>

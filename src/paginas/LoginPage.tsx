@@ -41,6 +41,8 @@ export function LoginPage() {
         navigate('/admin', { replace: true });
       } else if (usuario.papeis.includes('ORGANIZADOR')) {
         navigate('/organizador', { replace: true });
+      } else if (usuario.papeis.includes('ARBITRO')) {
+        navigate('/arbitro', { replace: true });
       } else {
         navigate('/partidas', { replace: true });
       }

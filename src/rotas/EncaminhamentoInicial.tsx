@@ -27,5 +27,9 @@ export function EncaminhamentoInicial() {
     return <Navigate to="/organizador" replace />;
   }
 
+  if (usuario.papeis.includes('ARBITRO')) {
+    return <Navigate to="/arbitro" replace />;
+  }
+
   return <Navigate to="/partidas" replace />;
 }

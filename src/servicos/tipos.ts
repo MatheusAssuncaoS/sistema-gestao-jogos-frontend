@@ -6,7 +6,7 @@
  * comparar com uma string que não existe.
  */
 
-export type Papel = 'JOGADOR' | 'ORGANIZADOR' | 'ADMINISTRADOR';
+export type Papel = 'JOGADOR' | 'ORGANIZADOR' | 'ARBITRO' | 'ADMINISTRADOR';
 
 export type StatusUsuario = 'PENDENTE' | 'ATIVO' | 'BLOQUEADO' | 'INATIVO' | 'RECUSADO';
 
@@ -81,6 +81,7 @@ export interface Partida {
   categoria: string | null;
   inicio: string;
   capacidade: number;
+  quantidadeInscritos?: number;
   status: StatusPartida;
   inscricoesAbremEm: string | null;
   inscricoesEncerramEm: string | null;
@@ -109,4 +110,6 @@ export interface InscricaoDoJogador {
   dataSolicitacao: string;
   dataConfirmacao: string | null;
   equipe: string | null;
+  capacidade: number;
+  quantidadeConfirmados: number;
 }

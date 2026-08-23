@@ -18,4 +18,10 @@ export const adminUsuarioService = {
 
   revogarOrganizador: (usuarioId: string) =>
     api.delete<UsuarioResumo>(`/api/admin/usuarios/${usuarioId}/organizador`),
+
+  concederArbitro: (usuarioId: string) =>
+    api.post<UsuarioResumo>(`/api/admin/usuarios/${usuarioId}/arbitro`),
+
+  revogarArbitro: (usuarioId: string) =>
+    api.delete<UsuarioResumo>(`/api/admin/usuarios/${usuarioId}/arbitro`),
 };
