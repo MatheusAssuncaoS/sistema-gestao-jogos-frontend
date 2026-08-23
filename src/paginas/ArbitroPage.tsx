@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { arbitroService } from '../servicos/arbitroService';
 import { ApiError } from '../servicos/api';
 import type { Inscrito } from '../servicos/tipos';
+import { PainelOperacionalLayout } from '../componentes/PainelOperacionalLayout';
 
 type Time = 'AMARELO' | 'AZUL';
 const data = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
@@ -32,7 +33,7 @@ export function ArbitroPage() {
     setTimes(Object.fromEntries(embaralhados.map((jogador, indice) => [jogador.jogadorId, indice % 2 === 0 ? 'AMARELO' : 'AZUL'])));
   }
 
-  return <div className="referee-page">
+  return <PainelOperacionalLayout ambiente="arbitro"><div className="admin-breadcrumb"><span>Arbitragem</span><b>/</b> Preparar partida</div><div className="referee-page admin-card">
     <header className="referee-heading"><div><span>Central do árbitro</span><h1>Preparar partida</h1><p>Distribua os jogadores antes do apito inicial.</p></div><CalendarDays /></header>
     {partidas.isPending && <p>Carregando partidas...</p>}
     {partidas.isError && <div className="player-empty"><CalendarDays /><h3>Não conseguimos carregar as partidas</h3><p>{mensagemDeErro(partidas.error)}</p><button type="button" onClick={() => partidas.refetch()}>Tentar novamente</button></div>}
@@ -49,7 +50,7 @@ export function ArbitroPage() {
       </div>}
       {semTime.length > 0 && <section className="referee-unassigned"><header><UsersRound /><h2>Sem time</h2><span>{semTime.length}</span></header><ul>{semTime.map((jogador) => <li key={jogador.jogadorId}><Jogador jogador={jogador} /><div><button className="yellow" onClick={() => atribuir(jogador, 'AMARELO')}>Amarelo</button><button className="blue" onClick={() => atribuir(jogador, 'AZUL')}>Azul</button></div></li>)}</ul></section>}
     </>}
-  </div>;
+  </div></PainelOperacionalLayout>;
 }
 
 function TimeCard({ time, jogadores, outroTime, atribuir }: { time: Time; jogadores: Inscrito[]; outroTime: Time; atribuir: (jogador: Inscrito, time: Time) => void }) {

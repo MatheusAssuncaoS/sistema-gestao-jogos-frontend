@@ -1,5 +1,5 @@
 import { useState, type ComponentType } from 'react';
-import { CalendarDays, ChevronDown, CircleUserRound, Gamepad2, Inbox, LayoutDashboard, LogOut, MapPin, Menu, Settings2, ShieldCheck, Shapes, Tags, Trophy, Users, X, type LucideProps } from 'lucide-react';
+import { CalendarDays, ChevronDown, CircleUserRound, Gamepad2, Inbox, LayoutDashboard, LogOut, MapPin, Menu, Settings2, ShieldCheck, Shapes, Tags, Timer, Trophy, Users, X, type LucideProps } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexto/useAuth';
@@ -16,6 +16,7 @@ export function AdminLayout() {
   const ambientes = [
     { rotulo: 'Administração', rota: '/admin', icone: ShieldCheck, disponivel: usuario?.papeis.includes('ADMINISTRADOR') },
     { rotulo: 'Organização', rota: '/organizador', icone: Trophy, disponivel: usuario?.papeis.includes('ORGANIZADOR') },
+    { rotulo: 'Arbitragem', rota: '/arbitro', icone: Timer, disponivel: usuario?.papeis.includes('ARBITRO') },
     { rotulo: 'Jogador', rota: '/partidas', icone: Gamepad2, disponivel: usuario?.papeis.includes('JOGADOR') },
   ].filter((ambiente) => ambiente.disponivel);
 

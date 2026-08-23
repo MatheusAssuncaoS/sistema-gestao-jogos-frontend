@@ -6,7 +6,7 @@ export function Layout() {
   const { usuario, sair } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const temShellProprio = location.pathname.startsWith('/admin') || location.pathname.startsWith('/organizador');
+  const temShellProprio = location.pathname.startsWith('/admin') || location.pathname.startsWith('/organizador') || location.pathname.startsWith('/arbitro');
 
   async function aoSair() { await sair(); navigate('/login', { replace: true }); }
   if (temShellProprio) return <Outlet />;

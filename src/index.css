@@ -807,6 +807,65 @@ body { min-width: 320px; line-height: 1.5; }
   }
 }
 
+/* Painéis operacionais — mesma linguagem do admin em desktop e mobile. */
+.operational-shell .admin-sidebar { z-index: 20; }
+.operational-shell .admin-brand-mark { background: #111827; }
+.operational-shell .admin-page-title { padding-left: .25rem; }
+.operational-shell .admin-content { min-height: calc(100vh - 4rem); }
+.operational-shell .admin-nav-item { width: 100%; border: 0; background: transparent; text-align: left; }
+.operational-shell .admin-nav-item-active { background: var(--muted); }
+.operational-shell .admin-account-nav .admin-nav-item { display: flex; align-items: center; text-decoration: none; }
+.operational-shell .admin-environment-menu { min-width: 14rem; }
+.operational-shell .referee-page { width: 100%; max-width: 1280px; gap: 1rem; }
+.operational-shell .referee-heading { padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.operational-shell .referee-heading span { color: var(--muted-foreground); font-size: .75rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.operational-shell .referee-heading h1 { margin: .2rem 0 0; color: var(--foreground); font-size: clamp(1.35rem, 1.1rem + .7vw, 1.75rem); font-weight: 650; }
+.operational-shell .referee-heading p { color: var(--muted-foreground); font-size: .875rem; }
+.operational-shell .referee-heading > svg { color: var(--foreground); background: var(--muted); }
+.operational-shell .referee-match-picker { color: var(--foreground); font-size: .75rem; font-weight: 600; }
+.operational-shell .referee-match-picker select { min-height: 2.75rem; border-color: var(--border); border-radius: var(--radius); color: var(--foreground); background: var(--card); font-size: .875rem; }
+.operational-shell .referee-match-summary { border: 1px solid #dfe8e3; border-radius: var(--radius); background: linear-gradient(120deg, #173f31, #25634d); box-shadow: 0 1px 2px rgb(0 0 0 / 5%); }
+.operational-shell .referee-shuffle { min-height: 2.75rem; border-radius: var(--radius); background: var(--foreground); font-size: .8125rem; }
+.operational-shell .referee-team, .operational-shell .referee-unassigned { border-color: var(--border); border-radius: var(--radius); background: var(--card); box-shadow: 0 1px 2px rgb(0 0 0 / 4%); }
+.operational-shell .referee-team > header { border-bottom: 1px solid rgb(0 0 0 / 8%); }
+.operational-shell .referee-team.amarelo > header { background: #f6d84c; }
+.operational-shell .referee-team.azul > header { background: #315f9e; }
+.operational-shell .referee-unassigned > header { min-height: 3.5rem; padding-inline: 1.125rem; }
+
+@media (min-width: 900px) {
+  .operational-shell .referee-page { grid-template-columns: minmax(0, 1fr) 14rem; align-items: start; }
+  .operational-shell .referee-heading,
+  .operational-shell .player-empty,
+  .operational-shell .player-feedback,
+  .operational-shell .referee-board,
+  .operational-shell .referee-unassigned,
+  .operational-shell .referee-page > p { grid-column: 1 / -1; }
+  .operational-shell .referee-match-picker { grid-column: 1; }
+  .operational-shell .referee-match-summary { grid-column: 1; }
+  .operational-shell .referee-shuffle { grid-column: 2; grid-row: 2 / span 2; align-self: stretch; }
+}
+
+@media (max-width: 760px) {
+  .operational-shell .admin-page-title { display: none; }
+  .operational-shell .admin-content { padding: 1rem; }
+  .operational-shell .admin-breadcrumb { display: none; }
+  .operational-shell .referee-heading { align-items: flex-start; }
+  .operational-shell .referee-heading > svg { width: 2.75rem; height: 2.75rem; padding: .7rem; }
+  .operational-shell .referee-match-summary { align-items: flex-start; flex-direction: column; }
+  .operational-shell .referee-shuffle { width: 100%; }
+  .operational-shell .referee-board { grid-template-columns: 1fr; }
+  .operational-shell .referee-team li { min-height: 3.75rem; }
+  .operational-shell .referee-unassigned li { align-items: stretch; padding: .75rem 0; }
+  .operational-shell .referee-unassigned li > div:last-child { width: 100%; }
+  .operational-shell .referee-unassigned button { min-height: 2.5rem; flex: 1; }
+}
+
+@media (max-width: 380px) {
+  .operational-shell .admin-content { padding: .75rem; }
+  .operational-shell .admin-environment { max-width: calc(100vw - 6.5rem); }
+  .operational-shell .referee-heading p { max-width: 16rem; }
+}
+
 /* Tabelas administrativas: leitura confortável e densidade consistente. */
 .admin-users-table th {
   padding-block: .875rem;
