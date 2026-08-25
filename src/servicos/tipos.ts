@@ -88,6 +88,22 @@ export interface Partida {
   escalaPublicada: boolean;
   versao: number;
   equipes: Equipe[];
+  arbitragem: ResumoArbitragem;
+}
+
+export type StatusArbitragem = 'PREPARACAO' | 'EM_ANDAMENTO' | 'PAUSADA' | 'FINALIZADA';
+
+export interface ResumoArbitragem {
+  status: StatusArbitragem;
+  golsAmarelo: number;
+  golsAzul: number;
+  totalGols: number;
+  totalPunicoes: number;
+  cartoesAmarelos: number;
+  cartoesVermelhos: number;
+  expulsos: number;
+  acrescimos: number;
+  segundos: number;
 }
 
 export type StatusInscricao = 'CONFIRMADA' | 'LISTA_ESPERA' | 'CANCELADA' | 'PRESENTE' | 'AUSENTE';

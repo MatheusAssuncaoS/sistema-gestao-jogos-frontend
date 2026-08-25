@@ -5,10 +5,13 @@ import { AdminLayout } from '../componentes/AdminLayout';
 import { AdminHome } from '../paginas/AdminHome';
 import { AdminUsuariosPage } from '../paginas/AdminUsuariosPage';
 import { AdminPartidasPage } from '../paginas/AdminPartidasPage';
+import { AdminNovaPartidaPage } from '../paginas/AdminNovaPartidaPage';
+import { AdminEditarPartidaPage } from '../paginas/AdminEditarPartidaPage';
 import { AdminCadastrosPage } from '../paginas/AdminCadastrosPage';
 import { AdminMinhaContaPage } from '../paginas/AdminMinhaContaPage';
 import { AdminConfiguracaoListaPage } from '../paginas/AdminConfiguracaoListaPage';
 import { AdminCalendarioPage } from '../paginas/AdminCalendarioPage';
+import { AdminNovaAgendaPage } from '../paginas/AdminNovaAgendaPage';
 import { ArbitroPage } from '../paginas/ArbitroPage';
 import { CadastroPage } from '../paginas/CadastroPage';
 import { JogadorHome } from '../paginas/JogadorHome';
@@ -73,12 +76,16 @@ export function AppRoutes() {
               <Route path="cadastros" element={<AdminCadastrosPage />} />
               <Route path="jogadores" element={<Navigate to="/admin/usuarios" replace />} />
               <Route path="organizadores" element={<Navigate to="/admin/usuarios" replace />} />
-              <Route path="partidas" element={<AdminPartidasPage />} />
+              <Route path="partidas" element={<AdminPartidasPage visualizacaoInicial="lista" />} />
+              <Route path="partidas/calendario" element={<AdminPartidasPage visualizacaoInicial="calendario" />} />
+              <Route path="partidas/nova" element={<AdminNovaPartidaPage />} />
+              <Route path="partidas/:partidaId" element={<AdminEditarPartidaPage />} />
               <Route path="configuracoes" element={<Navigate to="/admin/configuracoes/modalidades" replace />} />
               <Route path="configuracoes/modalidades" element={<AdminConfiguracaoListaPage tipo="modalidades" />} />
               <Route path="configuracoes/locais" element={<AdminConfiguracaoListaPage tipo="locais" />} />
               <Route path="configuracoes/categorias" element={<AdminConfiguracaoListaPage tipo="categorias" />} />
               <Route path="configuracoes/calendario" element={<AdminCalendarioPage />} />
+              <Route path="configuracoes/calendario/nova" element={<AdminNovaAgendaPage />} />
               <Route path="perfil" element={<AdminMinhaContaPage />} />
             </Route>
           </Route>

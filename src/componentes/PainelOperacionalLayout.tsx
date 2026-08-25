@@ -45,6 +45,7 @@ export function PainelOperacionalLayout({ ambiente, children }: { ambiente: Ambi
     <div className="admin-main">
       <header className="admin-topbar">
         <button className="admin-mobile-menu" type="button" aria-label="Abrir menu" onClick={() => setMenuAberto(true)}><Menu /></button>
+        <div className="operational-mobile-title"><strong>{atual.secao}</strong><small>{atual.titulo}</small></div>
         <div className="admin-environment-wrap">
           <button className="admin-environment" type="button" aria-expanded={ambientesAbertos} onClick={() => setAmbientesAbertos((aberto) => !aberto)}><IconeAtual aria-hidden="true" />{atual.titulo}<ChevronDown aria-hidden="true" /></button>
           {ambientesAbertos && ambientes.length > 1 && <div className="admin-environment-menu" role="menu">{ambientes.map(({ rotulo, rota, icone: Icon }) => <button key={rota} type="button" role="menuitem" onClick={() => navegarPara(rota)} className={rotulo === atual.titulo ? 'active' : ''}><Icon aria-hidden="true" /><span><strong>{rotulo}</strong><small>{rotulo === atual.titulo ? 'Ambiente atual' : `Ir para ${rotulo.toLowerCase()}`}</small></span></button>)}</div>}

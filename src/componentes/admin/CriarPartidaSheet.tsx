@@ -45,7 +45,7 @@ export function CriarPartidaSheet({ aberto, aoAlterar, aoCriar }: CriarPartidaSh
   });
   const horarios = useQuery({
     queryKey: ['calendario', 'horarios-disponiveis'],
-    queryFn: () => calendarioService.listarHorariosDisponiveis(90),
+    queryFn: () => calendarioService.listarHorariosDisponiveis(730),
     enabled: aberto,
   });
   const criacao = useMutation({

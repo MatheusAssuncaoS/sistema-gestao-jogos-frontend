@@ -1,5 +1,5 @@
 import { useState, type ComponentType } from 'react';
-import { CalendarDays, ChevronDown, CircleUserRound, Gamepad2, Inbox, LayoutDashboard, LogOut, MapPin, Menu, Settings2, ShieldCheck, Shapes, Tags, Timer, Trophy, Users, X, type LucideProps } from 'lucide-react';
+import { CalendarDays, ChevronDown, CircleUserRound, Gamepad2, Inbox, LayoutDashboard, List, LogOut, MapPin, Menu, Settings2, ShieldCheck, Shapes, Tags, Timer, Trophy, Users, X, type LucideProps } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexto/useAuth';
@@ -13,6 +13,7 @@ export function AdminLayout() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [ambientesAbertos, setAmbientesAbertos] = useState(false);
   const [configuracoesAbertas, setConfiguracoesAbertas] = useState(location.pathname.startsWith('/admin/configuracoes'));
+  const [partidasAbertas, setPartidasAbertas] = useState(location.pathname.startsWith('/admin/partidas'));
   const ambientes = [
     { rotulo: 'Administração', rota: '/admin', icone: ShieldCheck, disponivel: usuario?.papeis.includes('ADMINISTRADOR') },
     { rotulo: 'Organização', rota: '/organizador', icone: Trophy, disponivel: usuario?.papeis.includes('ORGANIZADOR') },
@@ -41,7 +42,11 @@ export function AdminLayout() {
           <ItemMenu rota="/admin" rotulo="Visão geral" icone={LayoutDashboard} fim aoNavegar={() => setMenuAberto(false)} />
           <ItemMenu rota="/admin/cadastros" rotulo="Solicitações" icone={Inbox} aoNavegar={() => setMenuAberto(false)} />
           <ItemMenu rota="/admin/usuarios" rotulo="Usuários" icone={Users} aoNavegar={() => setMenuAberto(false)} />
-          <ItemMenu rota="/admin/partidas" rotulo="Partidas" icone={CalendarDays} aoNavegar={() => setMenuAberto(false)} />
+          <button type="button" className={`admin-nav-item admin-nav-group ${location.pathname.startsWith('/admin/partidas') ? 'admin-nav-group-active' : ''}`} aria-expanded={partidasAbertas} onClick={() => { setPartidasAbertas(true); setMenuAberto(false); navigate('/admin/partidas'); }}><CalendarDays aria-hidden="true" />Partidas<ChevronDown aria-hidden="true" /></button>
+          {partidasAbertas && <div className="admin-subnav">
+            <ItemMenu rota="/admin/partidas" rotulo="Lista de partidas" icone={List} fim aoNavegar={() => setMenuAberto(false)} />
+            <ItemMenu rota="/admin/partidas/calendario" rotulo="Calendário de partidas" icone={CalendarDays} fim aoNavegar={() => setMenuAberto(false)} />
+          </div>}
           <button type="button" className={`admin-nav-item admin-nav-group ${location.pathname.startsWith('/admin/configuracoes') ? 'admin-nav-group-active' : ''}`} aria-expanded={configuracoesAbertas} onClick={() => setConfiguracoesAbertas((aberto) => !aberto)}><Settings2 aria-hidden="true" />Configurações<ChevronDown aria-hidden="true" /></button>
           {configuracoesAbertas && <div className="admin-subnav">
             <ItemMenu rota="/admin/configuracoes/modalidades" rotulo="Modalidades" icone={Shapes} aoNavegar={() => setMenuAberto(false)} />

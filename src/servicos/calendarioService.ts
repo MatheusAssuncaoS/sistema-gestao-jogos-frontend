@@ -14,6 +14,14 @@ export interface ExcecaoCalendario {
   fim: string;
 }
 
+export type DiaDaSemana = DiaFuncionamento['diaDaSemana'];
+export interface RegraAgenda { diaDaSemana: DiaDaSemana; horarios: string[]; }
+export interface AgendaDisponibilidade {
+  id: string; nome: string; localId: string; local: string; modalidadeId: string; modalidade: string;
+  categoriaId?: number; categoria?: string; inicio: string; fim: string; regras: RegraAgenda[];
+}
+export type DadosAgenda = Omit<AgendaDisponibilidade, 'id' | 'local' | 'modalidade' | 'categoria'>;
+
 /**
  * Consulta do calendário do clube. Usada para montar o seletor de horário
  * na criação de partida: a maioria dos horários fora dessa lista cai em
@@ -29,6 +37,10 @@ export const calendarioService = {
   criarDia: (diaDaSemana: DiaFuncionamento['diaDaSemana'], horario: string) => api.post<DiaFuncionamento>('/api/admin/calendario/dias-funcionamento', { diaDaSemana, horario }),
   editarDia: (id: string, diaDaSemana: DiaFuncionamento['diaDaSemana'], horario: string) => api.put<DiaFuncionamento>(`/api/admin/calendario/dias-funcionamento/${id}`, { diaDaSemana, horario }),
   excluirDia: (id: string) => api.delete<void>(`/api/admin/calendario/dias-funcionamento/${id}`),
+  listarAgendas: () => api.get<AgendaDisponibilidade[]>('/api/admin/calendario/agendas'),
+  criarAgenda: (dados: DadosAgenda) => api.post<AgendaDisponibilidade>('/api/admin/calendario/agendas', dados),
+  editarAgenda: (id: string, dados: DadosAgenda) => api.put<AgendaDisponibilidade>(`/api/admin/calendario/agendas/${id}`, dados),
+  excluirAgenda: (id: string) => api.delete<void>(`/api/admin/calendario/agendas/${id}`),
   listarExcecoes: () => api.get<ExcecaoCalendario[]>('/api/admin/calendario/excecoes'),
   criarExcecao: (dados: Omit<ExcecaoCalendario, 'id'>) => api.post<ExcecaoCalendario>('/api/admin/calendario/excecoes', dados),
   editarExcecao: (id: string, dados: Omit<ExcecaoCalendario, 'id'>) => api.put<ExcecaoCalendario>(`/api/admin/calendario/excecoes/${id}`, dados),

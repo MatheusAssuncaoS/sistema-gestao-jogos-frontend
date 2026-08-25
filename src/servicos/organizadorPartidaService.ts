@@ -10,6 +10,16 @@ export interface DadosCriacaoPartida {
   inscricoesAbremEm?: string;
   inscricoesEncerramEm?: string;
 }
+export interface DadosCriacaoPartidasLote extends Omit<DadosCriacaoPartida, 'inicio'> { inicios: string[]; }
+
+export interface DadosEdicaoPartida {
+  localId: string;
+  categoriaId?: number;
+  inicio: string;
+  inscricoesAbremEm?: string;
+  inscricoesEncerramEm?: string;
+  versao: number;
+}
 
 /**
  * Funções do fluxo de gestão de partidas pelo organizador (UC11). Cada tela
@@ -20,6 +30,10 @@ export const organizadorPartidaService = {
   listar: () => api.get<Partida[]>('/api/organizador/partidas'),
 
   criar: (dados: DadosCriacaoPartida) => api.post<Partida>('/api/organizador/partidas', dados),
+  criarLote: (dados: DadosCriacaoPartidasLote) => api.post<Partida[]>('/api/organizador/partidas/lote', dados),
+
+  editar: (partidaId: string, dados: DadosEdicaoPartida) =>
+    api.put<Partida>(`/api/organizador/partidas/${partidaId}`, dados),
 
   abrir: (partidaId: string) => api.post<Partida>(`/api/organizador/partidas/${partidaId}/abrir`),
 

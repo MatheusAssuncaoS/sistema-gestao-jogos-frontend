@@ -101,7 +101,7 @@ export function AdminConfiguracaoListaPage({ tipo }: { tipo: Tipo }) {
   return <section className="admin-card admin-users-page" aria-labelledby={`titulo-${tipo}`}>
     <header className="admin-card-header"><div><h1 id={`titulo-${tipo}`}>{dados.titulo}</h1><p>{dados.descricao}</p></div><button type="button" className="admin-button admin-button-primary" onClick={() => { cadastro.reset(); setCadastroAberto(true); }}><Plus aria-hidden="true" />Cadastrar {dados.singular}</button></header>
     <div className="admin-users-panel">
-      <div className="admin-users-toolbar"><label className="admin-users-search"><span>Buscar</span><div><input type="search" value={busca} onChange={(evento) => setBusca(evento.target.value)} placeholder={`Buscar ${dados.singular}`} /><Search aria-hidden="true" /></div></label></div>
+      <div className="admin-users-toolbar admin-table-toolbar"><label className="admin-users-search"><span className="sr-only">Buscar {dados.singular}</span><div><Search aria-hidden="true" /><input type="search" value={busca} onChange={(evento) => setBusca(evento.target.value)} placeholder={`Buscar ${dados.singular}...`} /></div></label></div>
       {consulta.isPending && <div className="admin-table-skeleton" aria-label={`Carregando ${dados.titulo.toLowerCase()}`}><span /><span /><span /></div>}
       {consulta.isError && <div className="admin-inline-error" role="alert"><span>Não foi possível carregar os dados.</span><button onClick={() => void consulta.refetch()}>Tentar novamente</button></div>}
       {consulta.isSuccess && itens.length === 0 && <div className="admin-empty-state"><h3>Nenhuma {dados.singular} encontrada</h3><p>Os registros cadastrados aparecerão aqui.</p></div>}
