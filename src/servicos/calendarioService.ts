@@ -12,15 +12,16 @@ export interface ExcecaoCalendario {
   tipo: 'FERIADO' | 'RECESSO' | 'BLOQUEIO';
   inicio: string;
   fim: string;
+  ativo: boolean;
 }
 
 export type DiaDaSemana = DiaFuncionamento['diaDaSemana'];
 export interface RegraAgenda { diaDaSemana: DiaDaSemana; horarios: string[]; }
 export interface AgendaDisponibilidade {
   id: string; nome: string; localId: string; local: string; modalidadeId: string; modalidade: string;
-  categoriaId?: number; categoria?: string; inicio: string; fim: string; regras: RegraAgenda[];
+  categoriaId?: number; categoria?: string; inicio: string; fim: string; ativo: boolean; regras: RegraAgenda[];
 }
-export type DadosAgenda = Omit<AgendaDisponibilidade, 'id' | 'local' | 'modalidade' | 'categoria'>;
+export type DadosAgenda = Omit<AgendaDisponibilidade, 'id' | 'local' | 'modalidade' | 'categoria' | 'ativo'>;
 
 /**
  * Consulta do calendário do clube. Usada para montar o seletor de horário
@@ -42,7 +43,7 @@ export const calendarioService = {
   editarAgenda: (id: string, dados: DadosAgenda) => api.put<AgendaDisponibilidade>(`/api/admin/calendario/agendas/${id}`, dados),
   excluirAgenda: (id: string) => api.delete<void>(`/api/admin/calendario/agendas/${id}`),
   listarExcecoes: () => api.get<ExcecaoCalendario[]>('/api/admin/calendario/excecoes'),
-  criarExcecao: (dados: Omit<ExcecaoCalendario, 'id'>) => api.post<ExcecaoCalendario>('/api/admin/calendario/excecoes', dados),
-  editarExcecao: (id: string, dados: Omit<ExcecaoCalendario, 'id'>) => api.put<ExcecaoCalendario>(`/api/admin/calendario/excecoes/${id}`, dados),
+  criarExcecao: (dados: Omit<ExcecaoCalendario, 'id' | 'ativo'>) => api.post<ExcecaoCalendario>('/api/admin/calendario/excecoes', dados),
+  editarExcecao: (id: string, dados: Omit<ExcecaoCalendario, 'id' | 'ativo'>) => api.put<ExcecaoCalendario>(`/api/admin/calendario/excecoes/${id}`, dados),
   excluirExcecao: (id: string) => api.delete<void>(`/api/admin/calendario/excecoes/${id}`),
 };

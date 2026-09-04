@@ -1,6 +1,9 @@
 import { useRef, useState, type FormEvent, type RefObject } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { Button } from '../componentes/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../componentes/ui/card';
+import { Input } from '../componentes/ui/input';
 import { useAuth } from '../contexto/useAuth';
 import { ApiError, ErroDeRede } from '../servicos/api';
 import { authService } from '../servicos/authService';
@@ -80,87 +83,98 @@ export function CadastroPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm p-8">
-      <h1 className="text-2xl font-bold">Criar conta</h1>
-
-      <p className="mt-2 text-sm text-gray-600">
-        Após o cadastro, um administrador precisa aprovar sua conta para você
-        poder se inscrever em partidas.
-      </p>
-
-      <form onSubmit={submeter} className="mt-6 space-y-4" noValidate>
-        <CampoDeTexto
-          id="campo-nome"
-          rotulo="Nome completo"
-          valor={nome}
-          aoAlterar={setNome}
-          autoComplete="name"
-          erro={errosPorCampo.nome}
-          campoRef={refsPorCampo.nome}
-          required
+    <main className="login-page signup-page">
+      <section className="login-shell signup-shell" aria-labelledby="signup-title">
+        <img
+          className="login-logo signup-logo"
+          src="/branding/clubeone-logo.png"
+          alt="ClubeOne"
         />
 
-        <CampoDeTexto
-          id="campo-email"
-          rotulo="E-mail"
-          tipo="email"
-          valor={email}
-          aoAlterar={setEmail}
-          autoComplete="email"
-          erro={errosPorCampo.email}
-          campoRef={refsPorCampo.email}
-          required
-        />
+        <Card className="login-card signup-card">
+          <CardHeader className="login-card-header signup-card-header">
+            <CardTitle id="signup-title">Crie sua conta</CardTitle>
+            <CardDescription>Preencha seus dados para participar do clube</CardDescription>
+          </CardHeader>
 
-        <CampoDeTexto
-          id="campo-senha"
-          rotulo="Senha"
-          tipo="password"
-          valor={senha}
-          aoAlterar={setSenha}
-          autoComplete="new-password"
-          erro={errosPorCampo.senha}
-          campoRef={refsPorCampo.senha}
-          ajuda="Entre 8 e 72 caracteres."
-          required
-        />
+          <CardContent className="login-card-content signup-card-content">
+            <form onSubmit={submeter} className="login-form signup-form" noValidate>
+              <CampoDeTexto
+                id="campo-nome"
+                rotulo="Nome completo"
+                placeholder="Seu nome completo"
+                valor={nome}
+                aoAlterar={setNome}
+                autoComplete="name"
+                erro={errosPorCampo.nome}
+                campoRef={refsPorCampo.nome}
+                required
+              />
 
-        <CampoDeTexto
-          id="campo-confirmacao"
-          rotulo="Confirme a senha"
-          tipo="password"
-          valor={confirmacao}
-          aoAlterar={setConfirmacao}
-          autoComplete="new-password"
-          erro={errosPorCampo.confirmacao}
-          campoRef={refsPorCampo.confirmacao}
-          required
-        />
+              <CampoDeTexto
+                id="campo-email"
+                rotulo="E-mail"
+                placeholder="seuemail@exemplo.com"
+                tipo="email"
+                valor={email}
+                aoAlterar={setEmail}
+                autoComplete="email"
+                erro={errosPorCampo.email}
+                campoRef={refsPorCampo.email}
+                required
+              />
 
-        {erroGeral && <p className="text-sm text-red-600">{erroGeral}</p>}
+              <CampoDeTexto
+                id="campo-senha"
+                rotulo="Senha"
+                tipo="password"
+                valor={senha}
+                aoAlterar={setSenha}
+                autoComplete="new-password"
+                erro={errosPorCampo.senha}
+                campoRef={refsPorCampo.senha}
+                ajuda="Use de 8 a 72 caracteres, incluindo maiúscula, minúscula, número e símbolo."
+                required
+              />
 
-        <button
-          type="submit"
-          disabled={enviando}
-          className="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {enviando ? 'Criando conta...' : 'Criar conta'}
-        </button>
-      </form>
+              <CampoDeTexto
+                id="campo-confirmacao"
+                rotulo="Confirme a senha"
+                tipo="password"
+                valor={confirmacao}
+                aoAlterar={setConfirmacao}
+                autoComplete="new-password"
+                erro={errosPorCampo.confirmacao}
+                campoRef={refsPorCampo.confirmacao}
+                required
+              />
 
-      <p className="mt-4 text-sm text-gray-600">
-        Já tem conta?{' '}
-        <Link to="/login" className="text-blue-600 hover:underline">
-          Entrar
-        </Link>
-      </p>
-    </div>
+              {erroGeral && <p className="login-error signup-general-error" role="alert">{erroGeral}</p>}
+
+              <Button type="submit" disabled={enviando} className="login-submit signup-submit">
+                {enviando ? 'Criando conta...' : 'Criar conta'}
+              </Button>
+            </form>
+
+            <p className="login-signup signup-login-link">
+              Já tem uma conta? <Link to="/login">Entrar</Link>
+            </p>
+          </CardContent>
+        </Card>
+
+        <p className="login-terms">
+          Ao criar uma conta, você concorda com nossos <a href="#termos">Termos de Uso</a> e{' '}
+          <a href="#privacidade">Política de Privacidade</a>.
+        </p>
+      </section>
+    </main>
   );
 }
 
 interface CampoProps {
   id: string;
   rotulo: string;
+  placeholder?: string;
   valor: string;
   aoAlterar: (novoValor: string) => void;
   tipo?: 'text' | 'email' | 'password';
@@ -180,6 +194,7 @@ interface CampoProps {
 function CampoDeTexto({
   id,
   rotulo,
+  placeholder,
   valor,
   aoAlterar,
   tipo = 'text',
@@ -193,30 +208,29 @@ function CampoDeTexto({
   const idAjuda = `${id}-ajuda`;
 
   return (
-    <label className="block">
-      <span className="text-sm font-medium text-gray-700">{rotulo}</span>
+    <label className="login-field signup-field">
+      <span>{rotulo}</span>
 
-      <input
+      <Input
         id={id}
         ref={campoRef}
         type={tipo}
+        placeholder={placeholder}
         value={valor}
         onChange={(evento) => aoAlterar(evento.target.value)}
         autoComplete={autoComplete}
         required={required}
         aria-invalid={erro ? 'true' : undefined}
         aria-describedby={erro ? idErro : ajuda ? idAjuda : undefined}
-        className={`mt-1 block w-full rounded border px-3 py-2 ${
-          erro ? 'border-red-500' : 'border-gray-300'
-        }`}
+        className={erro ? 'signup-input-error' : undefined}
       />
 
       {erro ? (
-        <span id={idErro} className="mt-1 block text-xs text-red-600">
+        <span id={idErro} className="signup-field-message signup-field-error">
           {erro}
         </span>
       ) : ajuda ? (
-        <span id={idAjuda} className="mt-1 block text-xs text-gray-500">
+        <span id={idAjuda} className="signup-field-message">
           {ajuda}
         </span>
       ) : null}

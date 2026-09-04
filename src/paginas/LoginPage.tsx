@@ -1,6 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import { Button } from '../componentes/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../componentes/ui/card';
+import { Input } from '../componentes/ui/input';
 import { useAuth } from '../contexto/useAuth';
 import { ApiError } from '../servicos/api';
 
@@ -58,57 +61,68 @@ export function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm p-8">
-      <h1 className="text-2xl font-bold">Entrar</h1>
+    <main className="login-page">
+      <section className="login-shell" aria-labelledby="login-title">
+        <img
+          className="login-logo"
+          src="/branding/clubeone-logo.png"
+          alt="ClubeOne"
+        />
 
-      <form onSubmit={submeter} className="mt-6 space-y-4">
-        <label className="block">
-          <span className="text-sm font-medium text-gray-700">E-mail</span>
-          <input
-            type="email"
-            value={email}
-            onChange={(evento) => setEmail(evento.target.value)}
-            required
-            autoComplete="email"
-            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
-          />
-        </label>
+        <Card className="login-card">
+          <CardHeader className="login-card-header">
+            <CardTitle id="login-title">Bem-vindo ao ClubeOne</CardTitle>
+            <CardDescription>Acesse sua conta</CardDescription>
+          </CardHeader>
 
-        <label className="block">
-          <span className="text-sm font-medium text-gray-700">Senha</span>
-          <input
-            type="password"
-            value={senha}
-            onChange={(evento) => setSenha(evento.target.value)}
-            required
-            autoComplete="current-password"
-            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
-          />
-        </label>
+          <CardContent className="login-card-content">
+            <form onSubmit={submeter} className="login-form">
+              <label className="login-field">
+                <span>E-mail</span>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(evento) => setEmail(evento.target.value)}
+                  placeholder="seuemail@exemplo.com"
+                  required
+                  autoComplete="email"
+                  aria-invalid={erro ? 'true' : undefined}
+                />
+              </label>
 
-        {erro && <p className="text-sm text-red-600">{erro}</p>}
+              <label className="login-field">
+                <span className="login-password-label">
+                  <span>Senha</span>
+                  <Link to="/recuperar-senha">Esqueceu a senha?</Link>
+                </span>
+                <Input
+                  type="password"
+                  value={senha}
+                  onChange={(evento) => setSenha(evento.target.value)}
+                  required
+                  autoComplete="current-password"
+                  aria-invalid={erro ? 'true' : undefined}
+                />
+              </label>
 
-        <button
-          type="submit"
-          disabled={enviando}
-          className="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {enviando ? 'Entrando...' : 'Entrar'}
-        </button>
-      </form>
+              {erro && <p className="login-error" role="alert">{erro}</p>}
 
-      <p className="mt-4 text-sm text-gray-600">
-        Não tem conta?{' '}
-        <Link to="/cadastro" className="text-blue-600 hover:underline">
-          Criar conta
-        </Link>
-      </p>
+              <Button type="submit" disabled={enviando} className="login-submit">
+                {enviando ? 'Entrando...' : 'Entrar'}
+              </Button>
+            </form>
 
-      <p className="mt-2 text-sm text-gray-600">
-        <Link to="/recuperar-senha" className="text-blue-600 hover:underline">
-          Esqueci minha senha
-        </Link>
-      </p>
-    </div>
+            <p className="login-signup">
+              Não tem uma conta? <Link to="/cadastro">Crie uma agora</Link>
+            </p>
+          </CardContent>
+        </Card>
+
+        <p className="login-terms">
+          Ao continuar, você concorda com nossos <a href="#termos">Termos de Uso</a> e{' '}
+          <a href="#privacidade">Política de Privacidade</a>.
+        </p>
+      </section>
+    </main>
   );
 }

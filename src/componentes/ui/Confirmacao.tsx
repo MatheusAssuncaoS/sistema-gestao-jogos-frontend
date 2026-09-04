@@ -1,5 +1,6 @@
-import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import type { ReactNode } from 'react';
+
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './alert-dialog';
 
 interface ConfirmacaoProps {
   acionador: ReactNode;
@@ -12,19 +13,18 @@ interface ConfirmacaoProps {
 
 export function Confirmacao({ acionador, titulo, descricao, rotuloConfirmacao, processando, aoConfirmar }: ConfirmacaoProps) {
   return (
-    <AlertDialog.Root>
-      <AlertDialog.Trigger asChild>{acionador}</AlertDialog.Trigger>
-      <AlertDialog.Portal>
-        <AlertDialog.Overlay className="ui-dialog-overlay" />
-        <AlertDialog.Content className="ui-alert-content">
-          <AlertDialog.Title>{titulo}</AlertDialog.Title>
-          <AlertDialog.Description>{descricao}</AlertDialog.Description>
-          <div className="ui-alert-actions">
-            <AlertDialog.Cancel className="admin-button admin-button-secondary">Cancelar</AlertDialog.Cancel>
-            <AlertDialog.Action className="admin-button admin-button-danger" disabled={processando} onClick={aoConfirmar}>{processando ? 'Processando...' : rotuloConfirmacao}</AlertDialog.Action>
-          </div>
-        </AlertDialog.Content>
-      </AlertDialog.Portal>
-    </AlertDialog.Root>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>{acionador}</AlertDialogTrigger>
+      <AlertDialogContent className="ui-alert-content">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{titulo}</AlertDialogTitle>
+          <AlertDialogDescription>{descricao}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="ui-alert-actions">
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction className="bg-destructive text-white hover:bg-destructive/90" disabled={processando} onClick={aoConfirmar}>{processando ? 'Processando...' : rotuloConfirmacao}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

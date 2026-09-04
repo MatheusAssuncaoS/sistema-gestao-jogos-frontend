@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { ChevronRight, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -9,7 +9,8 @@ import type { CadastroPendente, Categoria, SituacaoAssociativa } from '../servic
 import { AvisoTemporario } from './ui/AvisoTemporario';
 import { Confirmacao } from './ui/Confirmacao';
 import { Paginacao } from './ui/Paginacao';
-import { Sheet } from './ui/Sheet';
+import { Sheet } from './ui/painel-lateral';
+import { StatusBadge } from './ui/StatusBadge';
 
 type Aba = 'pendentes' | 'recusados';
 type Etapa = 'analise' | 'dados' | 'revisao';
@@ -155,7 +156,7 @@ export function GestaoDeJogadores() {
         {erro && <div className="admin-inline-error" role="alert"><span>{erro}</span><button type="button" onClick={() => void carregar()}>Tentar novamente</button></div>}
         {carregando && <div className="admin-table-skeleton" aria-label="Carregando cadastros"><span /><span /><span /></div>}
         {!carregando && !erro && filtrados.length === 0 && <div className="admin-empty-state"><h3>{busca ? 'Nenhum cadastro encontrado' : aba === 'pendentes' ? 'Nenhum cadastro pendente' : 'Nenhum cadastro recusado'}</h3><p>{busca ? 'Tente buscar por outro nome ou e-mail.' : aba === 'pendentes' ? 'Novas solicitações aparecerão aqui.' : 'Cadastros recusados aparecerão aqui.'}</p>{busca && <button className="admin-button admin-button-secondary" onClick={() => setBusca('')}>Limpar busca</button>}</div>}
-        {!carregando && filtrados.length > 0 && <><div className="admin-users-table-wrap"><table className="admin-users-table admin-registration-table"><thead><tr><th>Solicitante</th><th>Solicitado em</th><th>Status</th><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{cadastrosDaPagina.map((cadastro) => <tr key={cadastro.usuarioId} onClick={() => abrir(cadastro)}><td><strong>{cadastro.nome}</strong><small>{cadastro.email}</small></td><td>{formatador.format(new Date(cadastro.cadastradoEm))}</td><td><span className={`admin-status admin-status-${aba === 'pendentes' ? 'pendente' : 'recusado'}`}>{aba === 'pendentes' ? 'Aguardando' : 'Recusado'}</span></td><td className="admin-user-action"><button type="button" aria-label={`Analisar ${cadastro.nome}`} onClick={(evento) => { evento.stopPropagation(); abrir(cadastro); }}>›</button></td></tr>)}</tbody></table></div><Paginacao total={filtrados.length} rotuloSingular="cadastro" rotuloPlural="cadastros" pagina={pagina} totalPaginas={totalPaginas} itensPorPagina={itensPorPagina} aoMudarPagina={setPagina} aoMudarItensPorPagina={(quantidade) => { setItensPorPagina(quantidade); setPagina(1); }} /></>}
+        {!carregando && filtrados.length > 0 && <><div className="admin-users-table-wrap"><table className="admin-users-table admin-registration-table"><thead><tr><th>Solicitante</th><th>Solicitado em</th><th>Status</th><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{cadastrosDaPagina.map((cadastro) => <tr key={cadastro.usuarioId} onClick={() => abrir(cadastro)}><td><strong>{cadastro.nome}</strong><small>{cadastro.email}</small></td><td>{formatador.format(new Date(cadastro.cadastradoEm))}</td><td><StatusBadge status={aba === 'pendentes' ? 'PENDENTE' : 'RECUSADO'} rotulo={aba === 'pendentes' ? 'Aguardando' : 'Recusado'} /></td><td className="admin-user-action"><button type="button" aria-label={`Analisar ${cadastro.nome}`} onClick={(evento) => { evento.stopPropagation(); abrir(cadastro); }}><ChevronRight aria-hidden="true" /></button></td></tr>)}</tbody></table></div><Paginacao total={filtrados.length} rotuloSingular="cadastro" rotuloPlural="cadastros" pagina={pagina} totalPaginas={totalPaginas} itensPorPagina={itensPorPagina} aoMudarPagina={setPagina} aoMudarItensPorPagina={(quantidade) => { setItensPorPagina(quantidade); setPagina(1); }} /></>}
       </div>
 
       <Sheet aberto={selecionado !== null} aoAlterar={(aberto) => { if (!aberto && !emAndamento) setSelecionado(null); }} titulo={selecionado?.nome ?? 'Cadastro'} descricao={selecionado?.email}>

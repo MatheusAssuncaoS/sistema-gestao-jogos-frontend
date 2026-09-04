@@ -5,7 +5,7 @@ import { ApiError } from '../../servicos/api';
 import { calendarioService } from '../../servicos/calendarioService';
 import { organizadorPartidaService } from '../../servicos/organizadorPartidaService';
 import type { Partida } from '../../servicos/tipos';
-import { Sheet } from '../ui/Sheet';
+import { Sheet } from '../ui/painel-lateral';
 
 interface CriarPartidaSheetProps {
   aberto: boolean;

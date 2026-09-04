@@ -1,5 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { ArrowDown, ArrowUp, ArrowUpDown, Funnel, KeyRound, RotateCcw, Search, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Funnel, KeyRound, RotateCcw, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -11,7 +11,8 @@ import { validarSenha } from '../validacao/cadastro';
 import { AvisoTemporario } from './ui/AvisoTemporario';
 import { Confirmacao } from './ui/Confirmacao';
 import { Paginacao } from './ui/Paginacao';
-import { Sheet } from './ui/Sheet';
+import { Sheet } from './ui/painel-lateral';
+import { StatusBadge } from './ui/StatusBadge';
 
 const rotulosStatus: Record<StatusUsuario, string> = { PENDENTE: 'Pendente', ATIVO: 'Ativo', BLOQUEADO: 'Bloqueado', INATIVO: 'Inativo', RECUSADO: 'Recusado' };
 const rotulosPapel: Record<Papel, string> = { JOGADOR: 'Jogador', ORGANIZADOR: 'Organizador', ARBITRO: 'Árbitro', ADMINISTRADOR: 'Administrador' };
@@ -138,7 +139,7 @@ export function GestaoDeUsuarios() {
         {usuarios.isError && <div className="admin-inline-error" role="alert"><span>{mensagemDeErro(usuarios.error)}</span><button onClick={() => void usuarios.refetch()}>Tentar novamente</button></div>}
         {usuarios.isPending && <div className="admin-table-skeleton" aria-label="Carregando usuários"><span /><span /><span /><span /></div>}
         {usuarios.isSuccess && filtrados.length === 0 && <div className="admin-empty-state"><h3>Nenhum usuário encontrado</h3><p>Ajuste a busca ou os filtros para encontrar uma conta.</p><button className="admin-button admin-button-secondary" onClick={() => { setBusca(''); setStatus('TODOS'); setPapel('TODOS'); }}>Limpar filtros</button></div>}
-        {filtrados.length > 0 && <><div className="admin-users-table-wrap"><table className="admin-users-table"><thead><tr><CabecalhoOrdenavel rotulo="Usuário" campo="usuario" ordenacao={ordenacao} aoOrdenar={ordenarPor} /><CabecalhoOrdenavel rotulo="E-mail" campo="email" ordenacao={ordenacao} aoOrdenar={ordenarPor} /><CabecalhoOrdenavel rotulo="Perfis" campo="perfis" ordenacao={ordenacao} aoOrdenar={ordenarPor} /><CabecalhoOrdenavel rotulo="Status" campo="status" ordenacao={ordenacao} aoOrdenar={ordenarPor} /><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{usuariosDaPagina.map((usuario) => <tr key={usuario.id} onClick={() => abrir(usuario)}><td><strong>{usuario.nome}</strong></td><td className="admin-user-email">{usuario.email}</td><td>{usuario.papeis.map((item) => <span key={item} className="admin-user-role">{rotulosPapel[item]}</span>)}</td><td><span className={`admin-status admin-status-${usuario.status.toLowerCase()}`}>{rotulosStatus[usuario.status]}</span></td><td className="admin-user-action"><button type="button" onClick={(evento) => { evento.stopPropagation(); abrir(usuario); }} aria-label={`Gerenciar ${usuario.nome}`}>›</button></td></tr>)}</tbody></table></div><Paginacao total={filtrados.length} rotuloSingular="usuário" rotuloPlural="usuários" pagina={pagina} totalPaginas={totalPaginas} itensPorPagina={itensPorPagina} aoMudarPagina={setPagina} aoMudarItensPorPagina={(quantidade) => { setItensPorPagina(quantidade); setPagina(1); }} /></>}
+        {filtrados.length > 0 && <><div className="admin-users-table-wrap"><table className="admin-users-table"><thead><tr><CabecalhoOrdenavel rotulo="Usuário" campo="usuario" ordenacao={ordenacao} aoOrdenar={ordenarPor} /><CabecalhoOrdenavel rotulo="E-mail" campo="email" ordenacao={ordenacao} aoOrdenar={ordenarPor} /><CabecalhoOrdenavel rotulo="Perfis" campo="perfis" ordenacao={ordenacao} aoOrdenar={ordenarPor} /><CabecalhoOrdenavel rotulo="Status" campo="status" ordenacao={ordenacao} aoOrdenar={ordenarPor} /><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{usuariosDaPagina.map((usuario) => <tr key={usuario.id} onClick={() => abrir(usuario)}><td><strong>{usuario.nome}</strong></td><td className="admin-user-email">{usuario.email}</td><td>{usuario.papeis.map((item) => <span key={item} className="admin-user-role">{rotulosPapel[item]}</span>)}</td><td><StatusBadge status={usuario.status} rotulo={rotulosStatus[usuario.status]} /></td><td className="admin-user-action"><button type="button" onClick={(evento) => { evento.stopPropagation(); abrir(usuario); }} aria-label={`Gerenciar ${usuario.nome}`}><ChevronRight aria-hidden="true" /></button></td></tr>)}</tbody></table></div><Paginacao total={filtrados.length} rotuloSingular="usuário" rotuloPlural="usuários" pagina={pagina} totalPaginas={totalPaginas} itensPorPagina={itensPorPagina} aoMudarPagina={setPagina} aoMudarItensPorPagina={(quantidade) => { setItensPorPagina(quantidade); setPagina(1); }} /></>}
       </div>
 
       <Sheet aberto={selecionado !== null} aoAlterar={(aberto) => { if (!aberto && !alterarPapel.isPending && !atualizarUsuario.isPending && !alterarStatus.isPending && !excluirUsuario.isPending) setSelecionado(null); }} titulo={selecionado?.nome ?? 'Usuário'} descricao={selecionado?.email}>

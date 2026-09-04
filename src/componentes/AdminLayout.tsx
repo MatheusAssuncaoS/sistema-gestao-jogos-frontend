@@ -1,25 +1,66 @@
 import { useState, type ComponentType } from 'react';
-import { CalendarDays, ChevronDown, CircleUserRound, Gamepad2, Inbox, LayoutDashboard, List, LogOut, MapPin, Menu, Settings2, ShieldCheck, Shapes, Tags, Timer, Trophy, Users, X, type LucideProps } from 'lucide-react';
+import {
+  Ban,
+  CalendarDays,
+  ChevronDown,
+  ChevronRight,
+  CircleUserRound,
+  Gamepad2,
+  Inbox,
+  LayoutDashboard,
+  List,
+  LogOut,
+  MapPin,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Settings2,
+  ShieldCheck,
+  Shapes,
+  Tags,
+  Timer,
+  Trophy,
+  Users,
+  X,
+  type LucideProps,
+} from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexto/useAuth';
 
 type Icone = ComponentType<LucideProps>;
 
+const destinos = [
+  { rotulo: 'Dashboard', rota: '/admin', icone: LayoutDashboard },
+  { rotulo: 'Partidas', rota: '/admin/partidas', icone: Trophy },
+  { rotulo: 'Calendário', rota: '/admin/partidas/calendario', icone: CalendarDays },
+  { rotulo: 'Solicitações', rota: '/admin/cadastros', icone: Inbox },
+  { rotulo: 'Jogadores', rota: '/admin/usuarios', icone: Users },
+  { rotulo: 'Suspensões', rota: '/admin/usuarios', icone: Ban },
+  { rotulo: 'Locais', rota: '/admin/configuracoes/locais', icone: MapPin },
+  { rotulo: 'Modalidades', rota: '/admin/configuracoes/modalidades', icone: Shapes },
+  { rotulo: 'Categorias', rota: '/admin/configuracoes/categorias', icone: Tags },
+];
+
 export function AdminLayout() {
   const { usuario, sair } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuAberto, setMenuAberto] = useState(false);
+  const [recolhida, setRecolhida] = useState(() => window.localStorage.getItem('sidebar-admin-recolhida') === 'true');
+  const [pesquisa, setPesquisa] = useState('');
   const [ambientesAbertos, setAmbientesAbertos] = useState(false);
-  const [configuracoesAbertas, setConfiguracoesAbertas] = useState(location.pathname.startsWith('/admin/configuracoes'));
-  const [partidasAbertas, setPartidasAbertas] = useState(location.pathname.startsWith('/admin/partidas'));
+  const [gestaoAberta, setGestaoAberta] = useState(true);
+  const [pessoasAbertas, setPessoasAbertas] = useState(true);
+  const [cadastrosAbertos, setCadastrosAbertos] = useState(location.pathname.startsWith('/admin/configuracoes'));
   const ambientes = [
     { rotulo: 'Administração', rota: '/admin', icone: ShieldCheck, disponivel: usuario?.papeis.includes('ADMINISTRADOR') },
     { rotulo: 'Organização', rota: '/organizador', icone: Trophy, disponivel: usuario?.papeis.includes('ORGANIZADOR') },
     { rotulo: 'Arbitragem', rota: '/arbitro', icone: Timer, disponivel: usuario?.papeis.includes('ARBITRO') },
     { rotulo: 'Jogador', rota: '/partidas', icone: Gamepad2, disponivel: usuario?.papeis.includes('JOGADOR') },
   ].filter((ambiente) => ambiente.disponivel);
+  const resultados = pesquisa.trim() ? destinos.filter((destino) => destino.rotulo.toLocaleLowerCase('pt-BR').includes(pesquisa.trim().toLocaleLowerCase('pt-BR'))) : [];
 
   async function aoSair() {
     await sair();
@@ -32,31 +73,55 @@ export function AdminLayout() {
     navigate(rota);
   }
 
+  function alternarSidebar() {
+    setRecolhida((valorAtual) => {
+      const novoValor = !valorAtual;
+      window.localStorage.setItem('sidebar-admin-recolhida', String(novoValor));
+      return novoValor;
+    });
+  }
+
   return (
-    <div className="admin-shell">
+    <div className={`admin-shell club-shell ${recolhida ? 'admin-sidebar-collapsed' : ''}`}>
       {menuAberto && <button className="admin-sidebar-backdrop" aria-label="Fechar menu" onClick={() => setMenuAberto(false)} />}
       <aside className={`admin-sidebar ${menuAberto ? 'admin-sidebar-open' : ''}`}>
-        <div className="admin-brand"><span className="admin-brand-mark">G</span><strong>GameDash</strong><button className="admin-sidebar-close" type="button" aria-label="Fechar menu" onClick={() => setMenuAberto(false)}><X /></button></div>
+        <div className="admin-brand">
+          <span className="admin-brand-mark"><ShieldCheck aria-hidden="true" /></span>
+          <strong>Clube<span>One</span></strong>
+          <button className="admin-sidebar-close" type="button" aria-label="Fechar menu" onClick={() => setMenuAberto(false)}><X /></button>
+        </div>
+
+        <div className="admin-sidebar-search">
+          {recolhida ? <button type="button" aria-label="Abrir pesquisa" title="Pesquisa" onClick={alternarSidebar}><Search /></button> : <label><Search aria-hidden="true" /><input value={pesquisa} onChange={(evento) => setPesquisa(evento.target.value)} placeholder="Pesquisa" aria-label="Pesquisar no menu" /></label>}
+          {resultados.length > 0 && <div className="admin-sidebar-results">{resultados.map(({ rotulo, rota, icone: Icone }) => <button key={`${rotulo}-${rota}`} onClick={() => { navegarPara(rota); setPesquisa(''); }}><Icone /><span>{rotulo}</span></button>)}</div>}
+        </div>
+
         <nav aria-label="Navegação administrativa">
-          <p className="admin-nav-label">Administração</p>
-          <ItemMenu rota="/admin" rotulo="Visão geral" icone={LayoutDashboard} fim aoNavegar={() => setMenuAberto(false)} />
-          <ItemMenu rota="/admin/cadastros" rotulo="Solicitações" icone={Inbox} aoNavegar={() => setMenuAberto(false)} />
-          <ItemMenu rota="/admin/usuarios" rotulo="Usuários" icone={Users} aoNavegar={() => setMenuAberto(false)} />
-          <button type="button" className={`admin-nav-item admin-nav-group ${location.pathname.startsWith('/admin/partidas') ? 'admin-nav-group-active' : ''}`} aria-expanded={partidasAbertas} onClick={() => { setPartidasAbertas(true); setMenuAberto(false); navigate('/admin/partidas'); }}><CalendarDays aria-hidden="true" />Partidas<ChevronDown aria-hidden="true" /></button>
-          {partidasAbertas && <div className="admin-subnav">
-            <ItemMenu rota="/admin/partidas" rotulo="Lista de partidas" icone={List} fim aoNavegar={() => setMenuAberto(false)} />
-            <ItemMenu rota="/admin/partidas/calendario" rotulo="Calendário de partidas" icone={CalendarDays} fim aoNavegar={() => setMenuAberto(false)} />
-          </div>}
-          <button type="button" className={`admin-nav-item admin-nav-group ${location.pathname.startsWith('/admin/configuracoes') ? 'admin-nav-group-active' : ''}`} aria-expanded={configuracoesAbertas} onClick={() => setConfiguracoesAbertas((aberto) => !aberto)}><Settings2 aria-hidden="true" />Configurações<ChevronDown aria-hidden="true" /></button>
-          {configuracoesAbertas && <div className="admin-subnav">
-            <ItemMenu rota="/admin/configuracoes/modalidades" rotulo="Modalidades" icone={Shapes} aoNavegar={() => setMenuAberto(false)} />
+          <ItemMenu rota="/admin" rotulo="Dashboard" icone={LayoutDashboard} fim aoNavegar={() => setMenuAberto(false)} />
+          <p className="admin-nav-label">Plataforma</p>
+          <GrupoMenu rotulo="Gestão" icone={Trophy} aberto={gestaoAberta} aoAlternar={() => setGestaoAberta((valor) => !valor)}>
+            <ItemMenu rota="/admin/partidas/calendario" rotulo="Calendário" icone={CalendarDays} aoNavegar={() => setMenuAberto(false)} />
+            <ItemMenu rota="/admin/partidas" rotulo="Partidas" icone={List} fim aoNavegar={() => setMenuAberto(false)} />
+            <ItemMenu rota="/admin/partidas/nova" rotulo="Nova partida" icone={CalendarDays} aoNavegar={() => setMenuAberto(false)} />
+          </GrupoMenu>
+          <GrupoMenu rotulo="Pessoas" icone={Users} aberto={pessoasAbertas} aoAlternar={() => setPessoasAbertas((valor) => !valor)}>
+            <ItemMenu rota="/admin/usuarios" rotulo="Jogadores" icone={Users} fim aoNavegar={() => setMenuAberto(false)} />
+            <ItemMenu rota="/admin/cadastros" rotulo="Solicitações" icone={Inbox} aoNavegar={() => setMenuAberto(false)} />
+          </GrupoMenu>
+          <GrupoMenu rotulo="Cadastros" icone={Shapes} aberto={cadastrosAbertos} aoAlternar={() => setCadastrosAbertos((valor) => !valor)}>
             <ItemMenu rota="/admin/configuracoes/locais" rotulo="Locais" icone={MapPin} aoNavegar={() => setMenuAberto(false)} />
+            <ItemMenu rota="/admin/configuracoes/modalidades" rotulo="Modalidades" icone={Shapes} aoNavegar={() => setMenuAberto(false)} />
             <ItemMenu rota="/admin/configuracoes/categorias" rotulo="Categorias" icone={Tags} aoNavegar={() => setMenuAberto(false)} />
-            <ItemMenu rota="/admin/configuracoes/calendario" rotulo="Calendário" icone={CalendarDays} aoNavegar={() => setMenuAberto(false)} />
-          </div>}
+          </GrupoMenu>
+          <ItemMenu rota="/admin/configuracoes/calendario" rotulo="Configurações" icone={Settings2} aoNavegar={() => setMenuAberto(false)} />
+
           <div className="admin-account-nav">
-            <ItemMenu rota="/admin/perfil" rotulo="Minha conta" icone={CircleUserRound} aoNavegar={() => setMenuAberto(false)} />
-            <button className="admin-nav-item" type="button" onClick={aoSair}><LogOut aria-hidden="true" />Sair</button>
+            <Link to="/admin/perfil" className="admin-account-card" title="Minha conta" onClick={() => setMenuAberto(false)}>
+              <span className="admin-avatar" aria-hidden="true">{iniciais(usuario?.nome)}</span>
+              <span><strong>{usuario?.nome ?? 'Administrador'}</strong><small>{usuario?.email ?? 'admin@clubeone.com.br'}</small></span>
+              <ChevronRight />
+            </Link>
+            <button className="admin-account-logout" type="button" title="Sair" aria-label="Sair" onClick={aoSair}><LogOut /></button>
           </div>
         </nav>
       </aside>
@@ -64,11 +129,15 @@ export function AdminLayout() {
       <div className="admin-main">
         <header className="admin-topbar">
           <button className="admin-mobile-menu" type="button" aria-label="Abrir menu" onClick={() => setMenuAberto(true)}><Menu /></button>
+          <button className="admin-desktop-sidebar-toggle" type="button" aria-label={recolhida ? 'Expandir menu' : 'Recolher menu'} onClick={alternarSidebar}>{recolhida ? <PanelLeftOpen /> : <PanelLeftClose />}</button>
+          <span className="admin-topbar-divider" />
           <div className="admin-environment-wrap">
-            <button className="admin-environment" type="button" aria-expanded={ambientesAbertos} onClick={() => setAmbientesAbertos((aberto) => !aberto)}><ShieldCheck aria-hidden="true" />Administração<ChevronDown aria-hidden="true" /></button>
-            {ambientesAbertos && ambientes.length > 1 && <div className="admin-environment-menu" role="menu">{ambientes.map(({ rotulo, rota, icone: Icon }) => <button key={rota} type="button" role="menuitem" onClick={() => navegarPara(rota)} className={rota === '/admin' ? 'active' : ''}><Icon aria-hidden="true" /><span><strong>{rotulo}</strong><small>{rota === '/admin' ? 'Ambiente atual' : `Ir para ${rotulo.toLowerCase()}`}</small></span></button>)}</div>}
+            <button className="admin-environment" type="button" aria-expanded={ambientesAbertos} onClick={() => setAmbientesAbertos((aberto) => !aberto)}>ClubeOne<ChevronDown aria-hidden="true" /></button>
+            {ambientesAbertos && ambientes.length > 1 && <div className="admin-environment-menu" role="menu">{ambientes.map(({ rotulo, rota, icone: Icone }) => <button key={rota} type="button" role="menuitem" onClick={() => navegarPara(rota)} className={rota === '/admin' ? 'active' : ''}><Icone aria-hidden="true" /><span><strong>{rotulo}</strong><small>{rota === '/admin' ? 'Ambiente atual' : `Ir para ${rotulo.toLowerCase()}`}</small></span></button>)}</div>}
           </div>
-          <div className="admin-user"><span className="admin-avatar" aria-hidden="true">{iniciais(usuario?.nome)}</span><Link to="/admin/perfil" className="admin-user-profile-link"><strong>{usuario?.nome ?? 'Administrador'}</strong><small>Administrador</small></Link></div>
+          <ChevronRight className="admin-breadcrumb-chevron" />
+          <span className="admin-breadcrumb-title">{tituloDaRota(location.pathname)}</span>
+          <Link to="/admin/perfil" className="admin-topbar-account" aria-label="Minha conta"><CircleUserRound /></Link>
         </header>
         <main className="admin-content"><Outlet /></main>
       </div>
@@ -76,11 +145,30 @@ export function AdminLayout() {
   );
 }
 
-function iniciais(nome?: string) {
-  const partes = nome?.trim().split(/\s+/).filter(Boolean) ?? [];
-  return partes.slice(0, 2).map((parte) => parte[0]).join('').toUpperCase() || 'AD';
+function GrupoMenu({ rotulo, icone: Icone, aberto, aoAlternar, children }: { rotulo: string; icone: Icone; aberto: boolean; aoAlternar: () => void; children: React.ReactNode }) {
+  return <div className="admin-menu-group"><button type="button" className="admin-nav-item admin-nav-group" aria-expanded={aberto} title={rotulo} onClick={aoAlternar}><Icone aria-hidden="true" /><span>{rotulo}</span><ChevronDown aria-hidden="true" /></button>{aberto && <div className="admin-subnav">{children}</div>}</div>;
 }
 
-function ItemMenu({ rota, rotulo, icone: Icon, fim = false, aoNavegar }: { rota: string; rotulo: string; icone: Icone; fim?: boolean; aoNavegar: () => void }) {
-  return <NavLink to={rota} end={fim} onClick={aoNavegar} className={({ isActive }) => `admin-nav-item ${isActive ? 'admin-nav-item-active' : ''}`}><Icon aria-hidden="true" />{rotulo}</NavLink>;
+function ItemMenu({ rota, rotulo, icone: Icone, fim = false, aoNavegar }: { rota: string; rotulo: string; icone: Icone; fim?: boolean; aoNavegar: () => void }) {
+  return <NavLink to={rota} end={fim} onClick={aoNavegar} title={rotulo} className={({ isActive }) => `admin-nav-item ${isActive ? 'admin-nav-item-active' : ''}`}><Icone aria-hidden="true" /><span>{rotulo}</span></NavLink>;
+}
+
+function iniciais(nome?: string) {
+  return nome?.trim().split(/\s+/).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase() || 'AD';
+}
+
+function tituloDaRota(caminho: string) {
+  if (caminho === '/admin' || caminho === '/__design-preview') return 'Dashboard';
+  if (caminho.includes('/partidas/nova')) return 'Nova partida';
+  if (caminho.includes('/partidas/calendario')) return 'Calendário';
+  if (caminho.includes('/partidas/')) return 'Detalhes da partida';
+  if (caminho.endsWith('/partidas')) return 'Partidas';
+  if (caminho.includes('/cadastros')) return 'Solicitações';
+  if (caminho.includes('/usuarios')) return 'Usuários';
+  if (caminho.includes('/locais')) return 'Locais';
+  if (caminho.includes('/modalidades')) return 'Modalidades';
+  if (caminho.includes('/categorias')) return 'Categorias';
+  if (caminho.includes('/calendario')) return 'Configurações de calendário';
+  if (caminho.includes('/perfil')) return 'Minha conta';
+  return 'Administração';
 }

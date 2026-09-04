@@ -1,30 +1,36 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
-import { Layout } from '../componentes/Layout';
-import { AdminLayout } from '../componentes/AdminLayout';
-import { AdminHome } from '../paginas/AdminHome';
-import { AdminUsuariosPage } from '../paginas/AdminUsuariosPage';
-import { AdminPartidasPage } from '../paginas/AdminPartidasPage';
-import { AdminNovaPartidaPage } from '../paginas/AdminNovaPartidaPage';
-import { AdminEditarPartidaPage } from '../paginas/AdminEditarPartidaPage';
-import { AdminCadastrosPage } from '../paginas/AdminCadastrosPage';
-import { AdminMinhaContaPage } from '../paginas/AdminMinhaContaPage';
-import { AdminConfiguracaoListaPage } from '../paginas/AdminConfiguracaoListaPage';
-import { AdminCalendarioPage } from '../paginas/AdminCalendarioPage';
-import { AdminNovaAgendaPage } from '../paginas/AdminNovaAgendaPage';
-import { ArbitroPage } from '../paginas/ArbitroPage';
-import { CadastroPage } from '../paginas/CadastroPage';
-import { JogadorHome } from '../paginas/JogadorHome';
-import { LoginPage } from '../paginas/LoginPage';
-import { MinhasInscricoesPage } from '../paginas/MinhasInscricoesPage';
-import { MeusDadosPage } from '../paginas/MeusDadosPage';
-import { NaoEncontradaPage } from '../paginas/NaoEncontradaPage';
-import { OrganizadorHome } from '../paginas/OrganizadorHome';
-import { RecuperarSenhaPage } from '../paginas/RecuperarSenhaPage';
-import { TrocarSenhaPage } from '../paginas/TrocarSenhaPage';
 import { EncaminhamentoInicial } from './EncaminhamentoInicial';
 import { RotaPorPapel } from './RotaPorPapel';
 import { RotaProtegida } from './RotaProtegida';
+
+const Layout = lazy(() => import('../componentes/Layout').then((modulo) => ({ default: modulo.Layout })));
+const AdminLayout = lazy(() => import('../componentes/AdminLayout').then((modulo) => ({ default: modulo.AdminLayout })));
+const AdminHome = lazy(() => import('../paginas/AdminHome').then((modulo) => ({ default: modulo.AdminHome })));
+const AdminUsuariosPage = lazy(() => import('../paginas/AdminUsuariosPage').then((modulo) => ({ default: modulo.AdminUsuariosPage })));
+const AdminPartidasPage = lazy(() => import('../paginas/AdminPartidasPage').then((modulo) => ({ default: modulo.AdminPartidasPage })));
+const AdminNovaPartidaPage = lazy(() => import('../paginas/AdminNovaPartidaPage').then((modulo) => ({ default: modulo.AdminNovaPartidaPage })));
+const AdminEditarPartidaPage = lazy(() => import('../paginas/AdminEditarPartidaPage').then((modulo) => ({ default: modulo.AdminEditarPartidaPage })));
+const AdminCadastrosPage = lazy(() => import('../paginas/AdminCadastrosPage').then((modulo) => ({ default: modulo.AdminCadastrosPage })));
+const AdminMinhaContaPage = lazy(() => import('../paginas/AdminMinhaContaPage').then((modulo) => ({ default: modulo.AdminMinhaContaPage })));
+const AdminConfiguracaoListaPage = lazy(() => import('../paginas/AdminConfiguracaoListaPage').then((modulo) => ({ default: modulo.AdminConfiguracaoListaPage })));
+const AdminCalendarioPage = lazy(() => import('../paginas/AdminCalendarioPage').then((modulo) => ({ default: modulo.AdminCalendarioPage })));
+const AdminNovaAgendaPage = lazy(() => import('../paginas/AdminNovaAgendaPage').then((modulo) => ({ default: modulo.AdminNovaAgendaPage })));
+const ArbitroPage = lazy(() => import('../paginas/ArbitroPage').then((modulo) => ({ default: modulo.ArbitroPage })));
+const CadastroPage = lazy(() => import('../paginas/CadastroPage').then((modulo) => ({ default: modulo.CadastroPage })));
+const JogadorHome = lazy(() => import('../paginas/JogadorHome').then((modulo) => ({ default: modulo.JogadorHome })));
+const LoginPage = lazy(() => import('../paginas/LoginPage').then((modulo) => ({ default: modulo.LoginPage })));
+const MinhasInscricoesPage = lazy(() => import('../paginas/MinhasInscricoesPage').then((modulo) => ({ default: modulo.MinhasInscricoesPage })));
+const MeusDadosPage = lazy(() => import('../paginas/MeusDadosPage').then((modulo) => ({ default: modulo.MeusDadosPage })));
+const NaoEncontradaPage = lazy(() => import('../paginas/NaoEncontradaPage').then((modulo) => ({ default: modulo.NaoEncontradaPage })));
+const OrganizadorHome = lazy(() => import('../paginas/OrganizadorHome').then((modulo) => ({ default: modulo.OrganizadorHome })));
+const RecuperarSenhaPage = lazy(() => import('../paginas/RecuperarSenhaPage').then((modulo) => ({ default: modulo.RecuperarSenhaPage })));
+const TrocarSenhaPage = lazy(() => import('../paginas/TrocarSenhaPage').then((modulo) => ({ default: modulo.TrocarSenhaPage })));
+
+function CarregandoRota() {
+  return <div className="route-loading" role="status" aria-live="polite"><span />Carregando…</div>;
+}
 
 /**
  * Três blocos de rotas:
@@ -38,10 +44,12 @@ import { RotaProtegida } from './RotaProtegida';
  */
 export function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<CarregandoRota />}>
+      <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<CadastroPage />} />
       <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
+      {import.meta.env.DEV && <Route path="/__design-preview" element={<AdminLayout />}><Route index element={<AdminHome />} /></Route>}
 
       <Route element={<RotaProtegida />}>
         {/* Fora do Layout de propósito: quem tem senha provisória não deve
@@ -93,6 +101,7 @@ export function AppRoutes() {
       </Route>
 
       <Route path="*" element={<NaoEncontradaPage />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }

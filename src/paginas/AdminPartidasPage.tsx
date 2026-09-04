@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Paginacao } from '../componentes/ui/Paginacao';
 import { AvisoTemporario } from '../componentes/ui/AvisoTemporario';
+import { StatusBadge } from '../componentes/ui/StatusBadge';
 import { ApiError } from '../servicos/api';
 import { organizadorPartidaService } from '../servicos/organizadorPartidaService';
 import type { Partida, StatusArbitragem, StatusPartida } from '../servicos/tipos';
@@ -107,7 +108,7 @@ export function AdminPartidasPage({ visualizacaoInicial = 'lista' }: { visualiza
         {partidas.isPending && <div className="admin-table-skeleton" aria-label="Carregando partidas"><span /><span /><span /><span /></div>}
         {partidas.isSuccess && visualizacao === 'lista' && filtradas.length === 0 && <div className="admin-empty-state"><h3>Nenhuma partida encontrada</h3><p>Ajuste a busca, o status ou o período selecionado.</p><button className="admin-button admin-button-secondary" onClick={limparFiltros}>Limpar filtros</button></div>}
         {partidas.isSuccess && visualizacao === 'calendario' && <CalendarioPartidas partidas={partidasDoDia} dia={diaCalendario} aoMudarDia={setDiaCalendario} aoAbrir={abrir} />}
-        {filtradas.length > 0 && visualizacao === 'lista' && <><div className="admin-users-table-wrap"><table className="admin-users-table admin-matches-table"><thead><tr><th>Partida</th><th>Categoria</th><th>Dia da semana</th><th>Data e horário</th><th>Local</th><th>Capacidade</th><th>Status</th><th>Andamento</th><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{partidasDaPagina.map((partida) => <tr key={partida.id} onClick={() => abrir(partida)}><td><strong>{partida.modalidade}</strong></td><td>{partida.categoria ?? 'Todas as categorias'}</td><td className="admin-match-weekday">{formatoDiaSemana.format(new Date(partida.inicio))}</td><td>{formatoData.format(new Date(partida.inicio))}</td><td>{partida.local}</td><td>{partida.capacidade}</td><td><span className={`admin-badge admin-badge-${partida.status.toLowerCase()}`}>{rotulosStatus[partida.status]}</span></td><td><ResumoArbitragem partida={partida} /></td><td className="admin-user-action"><button type="button" aria-label={`Consultar partida de ${partida.modalidade}`} onClick={(evento) => { evento.stopPropagation(); abrir(partida); }}>›</button></td></tr>)}</tbody></table></div><Paginacao total={filtradas.length} rotuloSingular="partida" rotuloPlural="partidas" pagina={pagina} totalPaginas={totalPaginas} itensPorPagina={itensPorPagina} aoMudarPagina={setPagina} aoMudarItensPorPagina={(quantidade) => { setItensPorPagina(quantidade); setPagina(1); }} /></>}
+        {filtradas.length > 0 && visualizacao === 'lista' && <><div className="admin-users-table-wrap"><table className="admin-users-table admin-matches-table"><thead><tr><th>Partida</th><th>Categoria</th><th>Dia da semana</th><th>Data e horário</th><th>Local</th><th>Capacidade</th><th>Status</th><th>Andamento</th><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{partidasDaPagina.map((partida) => <tr key={partida.id} onClick={() => abrir(partida)}><td><strong>{partida.modalidade}</strong></td><td>{partida.categoria ?? 'Todas as categorias'}</td><td className="admin-match-weekday">{formatoDiaSemana.format(new Date(partida.inicio))}</td><td>{formatoData.format(new Date(partida.inicio))}</td><td>{partida.local}</td><td>{partida.capacidade}</td><td><StatusBadge status={partida.status} rotulo={rotulosStatus[partida.status]} /></td><td><ResumoArbitragem partida={partida} /></td><td className="admin-user-action"><button type="button" aria-label={`Consultar partida de ${partida.modalidade}`} onClick={(evento) => { evento.stopPropagation(); abrir(partida); }}><ChevronRight aria-hidden="true" /></button></td></tr>)}</tbody></table></div><Paginacao total={filtradas.length} rotuloSingular="partida" rotuloPlural="partidas" pagina={pagina} totalPaginas={totalPaginas} itensPorPagina={itensPorPagina} aoMudarPagina={setPagina} aoMudarItensPorPagina={(quantidade) => { setItensPorPagina(quantidade); setPagina(1); }} /></>}
       </div>
       {aviso && <AvisoTemporario mensagem={aviso} aoFechar={() => setAviso('')} />}
     </section>
@@ -135,7 +136,7 @@ function CalendarioPartidas({ partidas, dia, aoMudarDia, aoAbrir }: { partidas: 
 
 function ResumoArbitragem({ partida }: { partida: Partida }) {
   const arbitragem = partida.arbitragem;
-  return <span className={`admin-match-state admin-match-state-${arbitragem.status.toLowerCase()}`}>{rotulosArbitragem[arbitragem.status]}</span>;
+  return <StatusBadge status={arbitragem.status} rotulo={rotulosArbitragem[arbitragem.status]} />;
 }
 
 function dataLocal(data: Date) {
