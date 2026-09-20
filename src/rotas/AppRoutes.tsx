@@ -8,15 +8,19 @@ import { RotaProtegida } from './RotaProtegida';
 const Layout = lazy(() => import('../componentes/Layout').then((modulo) => ({ default: modulo.Layout })));
 const AdminLayout = lazy(() => import('../componentes/AdminLayout').then((modulo) => ({ default: modulo.AdminLayout })));
 const AdminHome = lazy(() => import('../paginas/AdminHome').then((modulo) => ({ default: modulo.AdminHome })));
+const AdminPerfisAcessoPage = lazy(() => import('../paginas/AdminPerfisAcessoPage').then(modulo => ({ default: modulo.AdminPerfisAcessoPage })));
+const AdminCriarUsuarioPage = lazy(() => import('../paginas/AdminCriarUsuarioPage').then(modulo => ({ default: modulo.AdminCriarUsuarioPage })));
+const AdminEditarUsuarioPage = lazy(() => import('../paginas/AdminEditarUsuarioPage').then(modulo => ({ default: modulo.AdminEditarUsuarioPage })));
 const AdminUsuariosPage = lazy(() => import('../paginas/AdminUsuariosPage').then((modulo) => ({ default: modulo.AdminUsuariosPage })));
+const AdminJogadoresPage = lazy(() => import('../paginas/AdminJogadoresPage').then((modulo) => ({ default: modulo.AdminJogadoresPage })));
 const AdminPartidasPage = lazy(() => import('../paginas/AdminPartidasPage').then((modulo) => ({ default: modulo.AdminPartidasPage })));
 const AdminNovaPartidaPage = lazy(() => import('../paginas/AdminNovaPartidaPage').then((modulo) => ({ default: modulo.AdminNovaPartidaPage })));
 const AdminEditarPartidaPage = lazy(() => import('../paginas/AdminEditarPartidaPage').then((modulo) => ({ default: modulo.AdminEditarPartidaPage })));
 const AdminCadastrosPage = lazy(() => import('../paginas/AdminCadastrosPage').then((modulo) => ({ default: modulo.AdminCadastrosPage })));
 const AdminMinhaContaPage = lazy(() => import('../paginas/AdminMinhaContaPage').then((modulo) => ({ default: modulo.AdminMinhaContaPage })));
 const AdminConfiguracaoListaPage = lazy(() => import('../paginas/AdminConfiguracaoListaPage').then((modulo) => ({ default: modulo.AdminConfiguracaoListaPage })));
+const AdminConfiguracaoFormPage = lazy(() => import('../paginas/AdminConfiguracaoFormPage').then((modulo) => ({ default: modulo.AdminConfiguracaoFormPage })));
 const AdminCalendarioPage = lazy(() => import('../paginas/AdminCalendarioPage').then((modulo) => ({ default: modulo.AdminCalendarioPage })));
-const AdminNovaAgendaPage = lazy(() => import('../paginas/AdminNovaAgendaPage').then((modulo) => ({ default: modulo.AdminNovaAgendaPage })));
 const ArbitroPage = lazy(() => import('../paginas/ArbitroPage').then((modulo) => ({ default: modulo.ArbitroPage })));
 const CadastroPage = lazy(() => import('../paginas/CadastroPage').then((modulo) => ({ default: modulo.CadastroPage })));
 const JogadorHome = lazy(() => import('../paginas/JogadorHome').then((modulo) => ({ default: modulo.JogadorHome })));
@@ -80,7 +84,11 @@ export function AppRoutes() {
           <Route element={<RotaPorPapel papelExigido="ADMINISTRADOR" />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminHome />} />
-              <Route path="usuarios" element={<AdminUsuariosPage />} />
+              <Route path="seguranca/perfis" element={<AdminPerfisAcessoPage />} />
+              <Route path="seguranca/usuarios/novo" element={<AdminCriarUsuarioPage />} />
+              <Route path="seguranca/usuarios/:usuarioId" element={<AdminEditarUsuarioPage />} />
+              <Route path="seguranca/usuarios" element={<AdminUsuariosPage />} />
+              <Route path="usuarios" element={<AdminJogadoresPage />} />
               <Route path="cadastros" element={<AdminCadastrosPage />} />
               <Route path="jogadores" element={<Navigate to="/admin/usuarios" replace />} />
               <Route path="organizadores" element={<Navigate to="/admin/usuarios" replace />} />
@@ -90,10 +98,14 @@ export function AppRoutes() {
               <Route path="partidas/:partidaId" element={<AdminEditarPartidaPage />} />
               <Route path="configuracoes" element={<Navigate to="/admin/configuracoes/modalidades" replace />} />
               <Route path="configuracoes/modalidades" element={<AdminConfiguracaoListaPage tipo="modalidades" />} />
+              <Route path="configuracoes/modalidades/:itemId" element={<AdminConfiguracaoFormPage tipo="modalidades" />} />
               <Route path="configuracoes/locais" element={<AdminConfiguracaoListaPage tipo="locais" />} />
+              <Route path="configuracoes/locais/:itemId" element={<AdminConfiguracaoFormPage tipo="locais" />} />
               <Route path="configuracoes/categorias" element={<AdminConfiguracaoListaPage tipo="categorias" />} />
+              <Route path="configuracoes/categorias/:itemId" element={<AdminConfiguracaoFormPage tipo="categorias" />} />
               <Route path="configuracoes/calendario" element={<AdminCalendarioPage />} />
-              <Route path="configuracoes/calendario/nova" element={<AdminNovaAgendaPage />} />
+              <Route path="configuracoes/calendario/:bloqueioId" element={<AdminCalendarioPage />} />
+              <Route path="configuracoes/calendario/nova" element={<Navigate to="/admin/configuracoes/calendario/novo" replace />} />
               <Route path="perfil" element={<AdminMinhaContaPage />} />
             </Route>
           </Route>

@@ -1,4 +1,4 @@
-import { Archive, Check, Clock3, LockKeyhole, Pause, Play, X } from 'lucide-react';
+import { Archive, Check, Circle, Clock3, LockKeyhole, Pause, Play, X } from 'lucide-react';
 
 type StatusBadgeProps = {
   status: string;
@@ -18,10 +18,11 @@ const configuracoes = {
   ENCERRADA: { tom: 'neutral', Icone: Archive },
   PENDENTE: { tom: 'neutral', Icone: Clock3 },
   PREPARACAO: { tom: 'neutral', Icone: Clock3 },
-  RASCUNHO: { tom: 'neutral', Icone: Clock3 },
+  RASCUNHO: { tom: 'warning', Icone: Circle },
   LISTA_ESPERA: { tom: 'warning', Icone: Clock3 },
   RECUSADO: { tom: 'danger', Icone: X },
   CANCELADA: { tom: 'danger', Icone: X },
+  EXCLUIDA: { tom: 'neutral', Icone: Archive },
   AUSENTE: { tom: 'danger', Icone: X },
   EM_ANDAMENTO: { tom: 'info', Icone: Play },
   PAUSADA: { tom: 'warning', Icone: Pause },

@@ -161,7 +161,7 @@ export function ArbitroPage() {
 
 function AgendaDoArbitro({ partidas, estados, carregando, erro, tentar, diaSelecionado, selecionarDia, selecionarPartida }: { partidas: Partida[]; estados: Record<string, StatusArbitragem>; carregando: boolean; erro: string | null; tentar: () => void; diaSelecionado: string; selecionarDia: (dia: string) => void; selecionarPartida: (id: string) => void }) {
   const dias = [...new Set(partidas.map((partida) => chaveDoDia(partida.inicio)))].sort();
-  const partidasDoDia = partidas.filter((partida) => chaveDoDia(partida.inicio) === diaSelecionado).sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const partidasDoDia = partidas.filter((partida) => partida.status !== 'EXCLUIDA' && chaveDoDia(partida.inicio) === diaSelecionado).sort((a, b) => a.inicio.localeCompare(b.inicio));
   return <div className="referee-schedule-page">
     <header className="referee-schedule-heading"><div><span>Central do árbitro</span><h1>Partidas do dia</h1><p>Escolha a partida que você vai apitar.</p></div><CalendarDays aria-hidden="true" /></header>
     {carregando && <div className="player-loading"><i /><i /></div>}

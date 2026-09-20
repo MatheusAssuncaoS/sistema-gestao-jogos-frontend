@@ -35,18 +35,18 @@ export function AdminHome() {
   const pendentes = useQuery({ queryKey: ['admin', 'jogadores', 'pendentes'], queryFn: adminJogadorService.listarPendentes, ...opcoesConsulta });
   const jogadores = useQuery({ queryKey: ['admin', 'jogadores', 'ativos', 'dashboard'], queryFn: () => adminJogadorService.listarAtivos(''), ...opcoesConsulta });
   const partidas = useQuery({ queryKey: ['partidas', 'gestao'], queryFn: organizadorPartidaService.listar, ...opcoesConsulta });
-  const consultasInscricoes = useQueries({ queries: (partidas.data ?? []).filter((partida) => partida.status !== 'CANCELADA').slice(0, 30).map((partida) => ({ queryKey: ['partidas', partida.id, 'inscritos', 'dashboard'], queryFn: () => organizadorPartidaService.listarInscritos(partida.id), ...opcoesConsulta })) });
+  const consultasInscricoes = useQueries({ queries: (partidas.data ?? []).filter((partida) => !['CANCELADA', 'EXCLUIDA'].includes(partida.status)).slice(0, 30).map((partida) => ({ queryKey: ['partidas', partida.id, 'inscritos', 'dashboard'], queryFn: () => organizadorPartidaService.listarInscritos(partida.id), ...opcoesConsulta })) });
 
   const agora = new Date();
   const inicioHoje = inicioDoDia(agora);
   const fimHoje = new Date(inicioHoje.getTime() + 86_400_000);
   const inicioSemana = inicioDaSemana(agora);
   const todasPartidas = partidas.data ?? (modoPrevia ? partidasDemonstracao() : []);
-  const partidasHoje = todasPartidas.filter((partida) => entre(partida.inicio, inicioHoje, fimHoje) && partida.status !== 'CANCELADA');
+  const partidasHoje = todasPartidas.filter((partida) => entre(partida.inicio, inicioHoje, fimHoje) && !['CANCELADA', 'EXCLUIDA'].includes(partida.status));
   const inscritos = modoPrevia ? inscricoesDemonstracao() : consultasInscricoes.flatMap((consulta) => consulta.data ?? []);
   const inscritosHoje = inscritos.filter((inscricao) => entre(inscricao.dataSolicitacao, inicioHoje, fimHoje)).length;
   const listaEspera = inscritos.filter((inscricao) => inscricao.status === 'LISTA_ESPERA');
-  const proximas = todasPartidas.filter((partida) => new Date(partida.inicio) >= agora && partida.status !== 'CANCELADA').sort(porInicio);
+  const proximas = todasPartidas.filter((partida) => new Date(partida.inicio) >= agora && !['CANCELADA', 'EXCLUIDA'].includes(partida.status)).sort(porInicio);
   const lotadas = proximas.filter((partida) => partida.status === 'LOTADA');
   const bloqueados = (usuarios.data ?? (modoPrevia ? usuariosDemonstracao : [])).filter((usuario) => usuario.status === 'BLOQUEADO');
   const partidasAbertas = proximas.filter((partida) => partida.status === 'ABERTA' || partida.status === 'LOTADA');
@@ -146,7 +146,7 @@ export function AdminHome() {
             <Link to="/admin/usuarios"><UserPlus /><span>Cadastrar jogador</span></Link>
             <Link to="/admin/partidas/nova"><CalendarPlus /><span>Nova partida</span></Link>
             <Link to="/admin/cadastros"><UsersRound /><span>Analisar cadastros</span></Link>
-            <Link to="/admin/configuracoes/calendario"><CalendarDays /><span>Gerir calendário</span></Link>
+            <Link to="/admin/configuracoes/calendario"><CalendarDays /><span>Bloqueios de Calendário</span></Link>
           </CardContent>
         </Card>
 
@@ -185,7 +185,7 @@ function agruparCategorias(jogadores: readonly Jogador[]) {
   jogadores.forEach((jogador) => contagem.set(jogador.categoria ?? 'Sem categoria', (contagem.get(jogador.categoria ?? 'Sem categoria') ?? 0) + 1));
   return [...contagem.entries()].map(([nome, valor]) => ({ nome, valor })).sort((a, b) => b.valor - a.valor);
 }
-function rotuloStatus(status: Partida['status']) { return ({ RASCUNHO: 'Rascunho', ABERTA: 'Aberta', LOTADA: 'Lotada', ENCERRADA: 'Encerrada', FINALIZADA: 'Finalizada', CANCELADA: 'Cancelada' } as const)[status]; }
+function rotuloStatus(status: Partida['status']) { return ({ RASCUNHO: 'Rascunho', ABERTA: 'Aberta', LOTADA: 'Lotada', ENCERRADA: 'Encerrada', FINALIZADA: 'Finalizada', CANCELADA: 'Cancelada', EXCLUIDA: 'Excluída' } as const)[status]; }
 
 const usuariosDemonstracao = [
   { id: '1', nome: 'Carlos Almeida', email: 'carlos@clubeone.com.br', status: 'ATIVO', papeis: ['JOGADOR'], versao: 1 },
@@ -213,7 +213,7 @@ function partidasDemonstracao(): Partida[] {
 }
 function partidaDemonstracao(id: string, dias: number, hora: number, categoria: string, local: string, inscritos: number, capacidade: number, status: Partida['status'], escalaPublicada: boolean): Partida {
   const inicio = inicioDoDia(new Date()); inicio.setDate(inicio.getDate() + dias); inicio.setHours(hora);
-  return { id, modalidade: 'Futebol', local, categoria, inicio: inicio.toISOString(), capacidade, quantidadeInscritos: inscritos, status, inscricoesAbremEm: null, inscricoesEncerramEm: null, escalaPublicada, versao: 1, equipes: [], arbitragem: { status: 'PREPARACAO', golsAmarelo: 0, golsAzul: 0, totalGols: 0, totalPunicoes: 0, cartoesAmarelos: 0, cartoesVermelhos: 0, expulsos: 0, acrescimos: 0, segundos: 0 } };
+  return { id, duracaoMinutos: 60, modalidade: 'Futebol', local, categoria, inicio: inicio.toISOString(), capacidade, quantidadeInscritos: inscritos, status, inscricoesAbremEm: null, inscricoesEncerramEm: null, escalaPublicada, versao: 1, equipes: [], arbitragem: { status: 'PREPARACAO', golsAmarelo: 0, golsAzul: 0, totalGols: 0, totalPunicoes: 0, cartoesAmarelos: 0, cartoesVermelhos: 0, expulsos: 0, acrescimos: 0, segundos: 0 } };
 }
 function inscricoesDemonstracao(): Inscrito[] {
   const agora = new Date().toISOString();

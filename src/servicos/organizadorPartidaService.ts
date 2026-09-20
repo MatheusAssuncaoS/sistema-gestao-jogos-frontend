@@ -6,6 +6,7 @@ export interface DadosCriacaoPartida {
   localId: string;
   categoriaId?: number;
   inicio: string;
+  duracaoMinutos?: number;
   capacidade?: number;
   inscricoesAbremEm?: string;
   inscricoesEncerramEm?: string;
@@ -16,6 +17,7 @@ export interface DadosEdicaoPartida {
   localId: string;
   categoriaId?: number;
   inicio: string;
+  duracaoMinutos?: number;
   inscricoesAbremEm?: string;
   inscricoesEncerramEm?: string;
   versao: number;
@@ -39,6 +41,9 @@ export const organizadorPartidaService = {
 
   cancelar: (partidaId: string) =>
     api.post<Partida>(`/api/organizador/partidas/${partidaId}/cancelar`),
+
+  excluir: (partidaId: string) =>
+    api.post<Partida>(`/api/organizador/partidas/${partidaId}/excluir`),
 
   listarInscritos: (partidaId: string) =>
     api.get<Inscrito[]>(`/api/organizador/partidas/${partidaId}/inscritos`),

@@ -1,83 +1,62 @@
-# Design QA — padronização de todas as tabelas
+# Design QA — calendário de partidas
 
-## Evidências
+- Source visual truth: `https://paceui.com/preview/templates/ultimate-dashboard/apps/calendar` and `/tmp/codex-clipboard-04d5de25-1e30-4475-8873-a55f85b32051.png`
+- Implementation: `http://localhost:5173/admin/partidas/calendario`
+- Browser evidence: Codex in-app browser capture of the month, week, and day states at a 1264 × 710 viewport.
+- Density: browser CSS pixels at device scale 1; source and implementation were compared by their content regions rather than browser chrome.
+- State: September 2026, with September 21 selected and realistic ClubeOne matches.
 
-- Source visual truth: `/tmp/codex-clipboard-51c82767-efa8-4288-8b20-b0e570b2557f.png` (`148 x 267`, 1x).
-- Estado anterior: `/tmp/codex-clipboard-6d74ea28-afad-44b6-b34d-fbf7153312f0.png` (`148 x 267`, 1x).
-- Usuários: `/tmp/clubeone-table-users-status-final.jpg` (`1175 x 914`, 1x).
-- Categorias: `/tmp/clubeone-table-categories-status-final.jpg` (`1190 x 926`, 1x).
-- Agendas: `/tmp/clubeone-table-schedules-status-fixed.jpg` (`1190 x 926`, 1x).
-- Partidas: `/tmp/clubeone-table-matches-status-final.jpg`.
-- Solicitações: `/tmp/clubeone-table-registrations-status-final.jpg`.
-- Dashboard: `/tmp/clubeone-dashboard-table-status-final.jpg`.
-- Estado: administrador autenticado, tema claro.
+## Full-view comparison evidence
 
-## Normalização e comparação
+The implementation preserves the source composition: compact month navigation in a left rail, period navigation and view controls in the main header, and a larger calendar surface on the right. It deliberately retains ClubeOne typography, neutral tokens, button styling, status colors, and match-card content instead of copying PaceUI branding.
 
-As referências são recortes focados da coluna Status; as implementações são capturas completas. A comparação conjunta considerou as regiões equivalentes de status, linhas e ações. Usuários, categorias e agendas tinham dados renderizados. Partidas e solicitações estavam vazias no backend atual, portanto seus estados foram validados pela implementação compartilhada, build e empty states renderizados.
+## Focused region comparison evidence
 
-## Resultado visual
-
-- Todas as cinco tabelas administrativas usam o mesmo componente `StatusBadge`.
-- A tabela resumida de próximas partidas do dashboard também usa o padrão.
-- Pills têm altura de 20 px, largura ajustada ao conteúdo, ícone de 11 px, gap de 4 px e tipografia de 10 px.
-- Ações de usuários, solicitações e partidas deixaram de usar o caractere `›` e agora usam `ChevronRight` da biblioteca de ícones.
-- A hierarquia de cabeçalho, linhas, divisórias, status e ações permanece consistente entre telas.
-
-## Semântica de estados
-
-- Preto: ativo/finalizado.
-- Verde: aberto/confirmado/presente.
-- Vermelho suave: bloqueado/recusado/cancelado/ausente.
-- Amarelo: lotado/lista de espera/pausado.
-- Cinza: pendente/rascunho/preparação/inativo/encerrado.
-- Azul: em andamento.
-
-## Superfícies obrigatórias
-
-- Tipografia: DM Sans, peso 550, line-height 1 e rótulos sem quebra.
-- Espaçamento: dimensões e alinhamento óptico compartilhados por componente.
-- Cores: contraste e diferenciação semântica verificados nos estados renderizados e mapeados.
-- Imagens/ativos: ícones Lucide reais, sem glifos ou desenhos CSS improvisados.
-- Copy: rótulos originais de cada domínio preservados.
-
-## Interações e estados
-
-- Linhas continuam abrindo seus painéis de detalhe.
-- Botões de ação interrompem a propagação e mantêm nomes acessíveis.
-- Ordenação, filtros, paginação e empty states não foram alterados.
-- Partidas e solicitações estavam sem registros no ambiente; esse é um limite de dados da validação visual, não um desvio da implementação.
-
-## Histórico de comparação
-
-1. P2 inicial: badges e ações tinham implementações diferentes entre cinco tabelas.
-2. Correção: criado componente compartilhado com mapeamento de estado, tom e ícone; setas de texto substituídas por ícones.
-3. P1 encontrado no primeiro passe: uma regra antiga da agenda sobrescreveu o texto branco do status ativo, deixando-o preto sobre fundo preto.
-4. Correção: adicionada especificidade para os tons dentro da tabela de agenda.
-5. Pós-correção: `/tmp/clubeone-table-schedules-status-fixed.jpg` confirma contraste e alinhamento corretos; usuários e categorias confirmam consistência entre tabelas.
+The mini calendar, view switcher, and event cells were inspected at readable scale. The mini calendar shows selected-day and event-dot states; the view switcher exposes Dia, Semana, and Mês; event cards retain time, modality, location, enrollment, and click behavior where space allows.
 
 ## Findings
 
-- Nenhum achado P0, P1 ou P2 pendente.
+- No actionable P0, P1, or P2 mismatch remains.
+- Typography: DM Sans hierarchy and compact control weights remain consistent with ClubeOne.
+- Spacing: the left rail and main calendar align in one bordered workspace with consistent dividers.
+- Colors: existing neutral and green semantic tokens are preserved.
+- Assets: the interface uses the project's existing Lucide icon set; no raster imagery is required by this screen.
+- Copy: labels are localized to Portuguese and match the product terminology.
+
+## Interaction checks
+
+- Selecting a date in the mini calendar updates the active period.
+- Dia, Semana, and Mês switch correctly.
+- Previous and next controls move by the active view's period.
+- Match cards remain selectable and route to match details.
+- Empty dates show an explicit empty state.
+
+## Comparison history
+
+- Initial pass: selected date was outside the fixture's event week, making the weekly view appear empty.
+- Verification pass: selected September 21 in the mini calendar and confirmed populated week and day views. No layout fix was required.
 
 ## Follow-up polish
 
-- P3: repetir a captura de Partidas e Solicitações quando o backend tiver registros para documentar visualmente todos os tons específicos dessas telas.
-
-## Validação técnica
-
-- `npm run build`: passou; somente aviso não bloqueante de chunk acima de 500 kB.
-- `npm run lint`: passou.
-- `npm test`: 3 arquivos e 19 testes passaram.
-- `git diff --check`: passou.
-
-## Implementation checklist
-
-- [x] Componente único de status.
-- [x] Mapeamento semântico de todos os estados.
-- [x] Ícones de ação consistentes.
-- [x] Usuários, categorias, agendas e dashboard verificados visualmente.
-- [x] Empty states de partidas e solicitações verificados.
-- [x] Build, lint e testes aprovados.
+- P3: a future iteration could add per-location visibility filters if the calendar becomes dense.
 
 final result: passed
+
+## 2026-09-20 — Listagem de usuários / referência Pace UI
+
+- Fonte visual: https://paceui.com/preview/templates/ultimate-dashboard/apps/users, capturada no navegador integrado (aba 1).
+- Implementação: http://localhost:5173/admin/seguranca/usuarios, capturada autenticada no navegador integrado (aba 2).
+- Evidências: capturas incorporadas à conversa na chamada “Comparar versão final em desktop”; referência e implementação retornadas juntas. Não foram exportados arquivos de imagem locais.
+- Desktop: viewport de 1440 × 1000 CSS px; capturas exibidas em aproximadamente 1440 × 1000 px, sem normalização adicional. Mobile: viewport 390 × 844 CSS px; captura incorporada em “Concluir verificação responsiva”.
+- Estado: primeira página, sem filtros, dez registros reais. A referência usa dados demonstrativos diferentes.
+- Tipografia: preservada a fonte do produto; nome em destaque e e-mail secundário, com hierarquia semelhante à referência.
+- Layout: filtros externos à tabela, borda fina, cabeçalho neutro, avatares circulares, ações por reticências. A paginação e o painel de edição existentes foram preservados.
+- Cores: fundo branco, bordas neutras, badge preto de Ativo conforme pedido anterior.
+- Assets: iniciais das contas substituem fotos porque o produto não possui fotos de usuários; ícones da biblioteca existente.
+- Conteúdo: português e dados reais; omitidas colunas sem dados correspondentes no sistema (departamento, último login).
+- Comparação inicial: densidade das linhas maior que a referência; altura e padding reduzidos. Botão de cadastro quebrava em duas linhas no mobile; corrigido com largura automática e texto sem quebra. Captura posterior confirmou a correção.
+- Responsividade: filtros se reorganizam e tabela mantém rolagem horizontal; nome/e-mail preservados mesmo com regras globais que escondiam a segunda coluna.
+- Interações verificadas: busca por Árbitro Teste retorna um usuário; filtro Árbitro retorna dois; limpar restaura 22; reticências abrem painel de gestão e fechamento retorna à lista.
+- Limites: console não inspecionado nesta rodada; operações de alteração de contas não executadas durante a revisão visual.
+- Sem problemas P0/P1/P2 restantes na adaptação solicitada. Diferenças de fonte, dados, sidebar e paginação são intencionais para preservar o produto.
+- final result: passed

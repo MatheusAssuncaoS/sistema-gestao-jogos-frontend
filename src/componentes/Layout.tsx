@@ -16,9 +16,9 @@ export function Layout() {
   return (
     <div className="player-shell">
       <header className="player-topbar">
-        <Link to="/partidas" className="player-brand" aria-label="Gestão de Jogos">
-          <span className="player-brand-mark"><span>G</span></span>
-          <strong>Gestão de <span>Jogos</span></strong>
+        <Link to="/partidas" className="player-brand" aria-label="ClubeOne">
+          <span className="player-brand-mark"><ShieldCheck aria-hidden="true" /></span>
+          <strong>Clube<span>One</span></strong>
         </Link>
         {usuario && <div className="player-account">
           <span className="player-account-name">Olá, {usuario.nome.split(' ')[0]}</span>

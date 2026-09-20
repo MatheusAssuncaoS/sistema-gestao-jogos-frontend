@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
 import { ApiError } from '../servicos/api';
-import { calendarioService } from '../servicos/calendarioService';
 import {
   organizadorPartidaService,
   type DadosCriacaoPartida,
@@ -38,6 +37,7 @@ const ROTULO_STATUS: Record<StatusPartida, string> = {
   ENCERRADA: 'Encerrada',
   FINALIZADA: 'Finalizada',
   CANCELADA: 'Cancelada',
+  EXCLUIDA: 'Excluída',
 };
 
 const ROTULO_STATUS_INSCRICAO: Record<StatusInscricao, string> = {
@@ -53,7 +53,7 @@ function classeDoBadge(status: StatusPartida) {
 }
 
 function statusEncerrado(status: StatusPartida) {
-  return status === 'ENCERRADA' || status === 'FINALIZADA' || status === 'CANCELADA';
+  return status === 'ENCERRADA' || status === 'FINALIZADA' || status === 'CANCELADA' || status === 'EXCLUIDA';
 }
 
 function mensagemDeErro(falha: unknown): string {
@@ -91,7 +91,6 @@ export function GestaoDePartidas({ somenteLeitura = false }: GestaoDePartidasPro
   const [modalidades, setModalidades] = useState<Modalidade[]>([]);
   const [locais, setLocais] = useState<LocalPartida[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [horarios, setHorarios] = useState<string[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [emAndamento, setEmAndamento] = useState<string | null>(null);
@@ -133,11 +132,6 @@ export function GestaoDePartidas({ somenteLeitura = false }: GestaoDePartidasPro
   async function abrirFormulario() {
     setFormularioAberto(true);
     setAviso(null);
-    try {
-      setHorarios(await calendarioService.listarHorariosDisponiveis());
-    } catch (falha) {
-      setErro(mensagemDeErro(falha));
-    }
   }
 
   async function criar(dados: DadosCriacaoPartida) {
@@ -260,7 +254,6 @@ export function GestaoDePartidas({ somenteLeitura = false }: GestaoDePartidasPro
           modalidades={modalidades}
           locais={locais}
           categorias={categorias}
-          horarios={horarios}
           enviando={emAndamento === 'nova'}
           aoConfirmar={criar}
           aoCancelar={() => setFormularioAberto(false)}
@@ -371,7 +364,6 @@ interface FormularioDeCriacaoProps {
   modalidades: Modalidade[];
   locais: LocalPartida[];
   categorias: Categoria[];
-  horarios: string[];
   enviando: boolean;
   aoConfirmar: (dados: DadosCriacaoPartida) => void;
   aoCancelar: () => void;
@@ -381,7 +373,6 @@ function FormularioDeCriacao({
   modalidades,
   locais,
   categorias,
-  horarios,
   enviando,
   aoConfirmar,
   aoCancelar,
@@ -391,6 +382,7 @@ function FormularioDeCriacao({
   const [categoriaId, setCategoriaId] = useState<number | ''>('');
   const [inicio, setInicio] = useState('');
   const [capacidade, setCapacidade] = useState('');
+  const [duracao, setDuracao] = useState('60');
   const [inscricoesAbremEm, setInscricoesAbremEm] = useState('');
   const [inscricoesEncerramEm, setInscricoesEncerramEm] = useState('');
 
@@ -399,10 +391,11 @@ function FormularioDeCriacao({
     if (!modalidadeId || !localId || !inicio) return;
 
     aoConfirmar({
+      duracaoMinutos: Number(duracao),
       modalidadeId,
       localId,
       categoriaId: categoriaId === '' ? undefined : categoriaId,
-      inicio,
+      inicio: `${inicio}:00-03:00`,
       capacidade: capacidade === '' ? undefined : Number(capacidade),
       inscricoesAbremEm: inscricoesAbremEm ? new Date(inscricoesAbremEm).toISOString() : undefined,
       inscricoesEncerramEm: inscricoesEncerramEm
@@ -436,7 +429,7 @@ function FormularioDeCriacao({
         <span className="text-xs font-medium text-gray-700">Local</span>
         <select
           value={localId}
-          onChange={(evento) => setLocalId(evento.target.value)}
+          onChange={(evento) => { setLocalId(evento.target.value); setInicio(''); }}
           required
           className="mt-1 block rounded border border-gray-300 px-2 py-1.5 text-sm"
         >
@@ -471,23 +464,10 @@ function FormularioDeCriacao({
 
       <label className="block">
         <span className="text-xs font-medium text-gray-700">Horário</span>
-        <select
-          value={inicio}
-          onChange={(evento) => setInicio(evento.target.value)}
-          required
-          className="mt-1 block rounded border border-gray-300 px-2 py-1.5 text-sm"
-        >
-          <option value="" disabled>
-            {horarios.length === 0 ? 'Nenhum horário disponível' : 'Selecione'}
-          </option>
-          {horarios.map((horario) => (
-            <option key={horario} value={horario}>
-              {formatarData(horario)}
-            </option>
-          ))}
-        </select>
+        <input type="datetime-local" required value={inicio} onChange={e=>setInicio(e.target.value)} className="mt-1 block rounded border border-gray-300 px-2 py-1.5 text-sm" />
       </label>
 
+      <label>Duração prevista (minutos)<input required type="number" min="1" max="1440" step="1" value={duracao} onChange={e=>setDuracao(e.target.value)}/></label>
       <label className="block">
         <span className="text-xs font-medium text-gray-700">Capacidade (opcional)</span>
         <input
@@ -523,7 +503,7 @@ function FormularioDeCriacao({
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={enviando || horarios.length === 0}
+          disabled={enviando || !inicio}
           className="admin-button admin-button-primary"
         >
           {enviando ? 'Criando...' : 'Criar partida'}

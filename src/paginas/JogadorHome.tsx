@@ -29,7 +29,7 @@ export function JogadorHome() {
   const horaAtual = new Date().getHours();
   const saudacao = horaAtual < 12 ? 'Bom dia' : horaAtual < 18 ? 'Boa tarde' : 'Boa noite';
   return <div className="player-page">
-    <section className="player-hero player-greeting"><h1>{saudacao}, {usuario?.nome.split(' ')[0]}</h1><CalendarDays aria-hidden="true" /></section>
+    <header className="player-greeting"><span>ClubeOne</span><h1>{saudacao}, {usuario?.nome.split(' ')[0]}</h1><p>Veja as próximas partidas e escolha onde você quer jogar.</p></header>
     <div className="player-section-heading">
       <div><span>Partidas</span><h2>Disponíveis para você</h2><p>Inscrições abertas e organizadas por data.</p></div>
       <button type="button" onClick={() => Promise.all([partidas.refetch(), minhasInscricoes.refetch()])} disabled={partidas.isFetching || minhasInscricoes.isFetching}><RefreshCw size={18} /> Atualizar</button>

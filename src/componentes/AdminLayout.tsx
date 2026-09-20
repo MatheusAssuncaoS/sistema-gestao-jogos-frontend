@@ -15,7 +15,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Search,
-  Settings2,
   ShieldCheck,
   Shapes,
   Tags,
@@ -32,6 +31,8 @@ import { useAuth } from '../contexto/useAuth';
 type Icone = ComponentType<LucideProps>;
 
 const destinos = [
+  { rotulo: 'Perfil de Acesso', rota: '/admin/seguranca/perfis', icone: ShieldCheck },
+  { rotulo: 'Usuário', rota: '/admin/seguranca/usuarios', icone: Users },
   { rotulo: 'Dashboard', rota: '/admin', icone: LayoutDashboard },
   { rotulo: 'Partidas', rota: '/admin/partidas', icone: Trophy },
   { rotulo: 'Calendário', rota: '/admin/partidas/calendario', icone: CalendarDays },
@@ -40,6 +41,7 @@ const destinos = [
   { rotulo: 'Suspensões', rota: '/admin/usuarios', icone: Ban },
   { rotulo: 'Locais', rota: '/admin/configuracoes/locais', icone: MapPin },
   { rotulo: 'Modalidades', rota: '/admin/configuracoes/modalidades', icone: Shapes },
+  { rotulo: 'Bloqueios de Calendário', rota: '/admin/configuracoes/calendario', icone: Ban },
   { rotulo: 'Categorias', rota: '/admin/configuracoes/categorias', icone: Tags },
 ];
 
@@ -51,6 +53,7 @@ export function AdminLayout() {
   const [recolhida, setRecolhida] = useState(() => window.localStorage.getItem('sidebar-admin-recolhida') === 'true');
   const [pesquisa, setPesquisa] = useState('');
   const [ambientesAbertos, setAmbientesAbertos] = useState(false);
+  const [segurancaAberta, setSegurancaAberta] = useState(true);
   const [gestaoAberta, setGestaoAberta] = useState(true);
   const [pessoasAbertas, setPessoasAbertas] = useState(true);
   const [cadastrosAbertos, setCadastrosAbertos] = useState(location.pathname.startsWith('/admin/configuracoes'));
@@ -112,8 +115,13 @@ export function AdminLayout() {
             <ItemMenu rota="/admin/configuracoes/locais" rotulo="Locais" icone={MapPin} aoNavegar={() => setMenuAberto(false)} />
             <ItemMenu rota="/admin/configuracoes/modalidades" rotulo="Modalidades" icone={Shapes} aoNavegar={() => setMenuAberto(false)} />
             <ItemMenu rota="/admin/configuracoes/categorias" rotulo="Categorias" icone={Tags} aoNavegar={() => setMenuAberto(false)} />
+            <ItemMenu rota="/admin/configuracoes/calendario" rotulo="Bloqueios de Calendário" icone={Ban} aoNavegar={() => setMenuAberto(false)} />
           </GrupoMenu>
-          <ItemMenu rota="/admin/configuracoes/calendario" rotulo="Configurações" icone={Settings2} aoNavegar={() => setMenuAberto(false)} />
+
+          <GrupoMenu rotulo="Segurança" icone={ShieldCheck} aberto={segurancaAberta} aoAlternar={() => setSegurancaAberta(valor => !valor)}>
+            <ItemMenu rota="/admin/seguranca/perfis" rotulo="Perfil de Acesso" icone={ShieldCheck} aoNavegar={() => setMenuAberto(false)} />
+            <ItemMenu rota="/admin/seguranca/usuarios" rotulo="Usuário" icone={Users} aoNavegar={() => setMenuAberto(false)} />
+          </GrupoMenu>
 
           <div className="admin-account-nav">
             <Link to="/admin/perfil" className="admin-account-card" title="Minha conta" onClick={() => setMenuAberto(false)}>
@@ -164,11 +172,15 @@ function tituloDaRota(caminho: string) {
   if (caminho.includes('/partidas/')) return 'Detalhes da partida';
   if (caminho.endsWith('/partidas')) return 'Partidas';
   if (caminho.includes('/cadastros')) return 'Solicitações';
+  if (caminho.includes('/seguranca/perfis')) return 'Perfil de Acesso';
+  if (caminho.endsWith('/seguranca/usuarios/novo')) return 'Cadastrar usuário';
+  if (caminho.startsWith('/admin/seguranca/usuarios/')) return 'Editar usuário';
+  if (caminho.includes('/seguranca/usuarios')) return 'Usuário';
   if (caminho.includes('/usuarios')) return 'Usuários';
   if (caminho.includes('/locais')) return 'Locais';
   if (caminho.includes('/modalidades')) return 'Modalidades';
   if (caminho.includes('/categorias')) return 'Categorias';
-  if (caminho.includes('/calendario')) return 'Configurações de calendário';
+  if (caminho.includes('/calendario')) return 'Bloqueios de Calendário';
   if (caminho.includes('/perfil')) return 'Minha conta';
   return 'Administração';
 }

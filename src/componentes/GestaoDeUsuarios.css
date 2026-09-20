@@ -1,0 +1,42 @@
+/* Listagem de usuários inspirada na referência Pace UI. */
+.club-shell .pace-users-page .admin-card-header { align-items: center; margin-bottom: 24px; }
+.pace-users-header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.club-shell .pace-users-page .admin-users-panel { overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.club-shell .pace-users-page .pace-users-toolbar { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 12px; padding: 0 0 20px; border: 0; }
+.club-shell .pace-users-page .pace-users-toolbar .admin-users-search { flex: 1 1 280px; width: auto; max-width: none; margin: 0; }
+.club-shell .pace-users-page .admin-users-search > div { height: 40px; border-color: var(--border); border-radius: 7px; box-shadow: 0 1px 2px rgb(0 0 0 / 3%); }
+.club-shell .pace-users-page .admin-users-search input { height: 38px; font-size: 13px; }
+.pace-users-filter { flex: 0 1 190px; min-width: 160px; }
+.pace-users-filter select { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 7px; color: var(--foreground); background: var(--card); font: inherit; font-size: 13px; box-shadow: 0 1px 2px rgb(0 0 0 / 3%); }
+.club-shell .pace-users-page .admin-users-table-wrap { border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; }
+.club-shell .pace-users-page .admin-users-table { width: 100%; min-width: 690px; table-layout: fixed; }
+.club-shell .pace-users-page .admin-users-table th { height: 44px; padding: 10px 16px; background: #fafafa; font-size: 12px; font-weight: 500; }
+.club-shell .pace-users-page .admin-users-table th:nth-child(1) { width: 68px; }
+.club-shell .pace-users-page .admin-users-table th:nth-child(2) { width: 42%; }
+.club-shell .pace-users-page .admin-users-table th:nth-child(3) { width: auto; }
+.club-shell .pace-users-page .admin-users-table th:nth-child(4) { width: 140px; }
+.club-shell .pace-users-page .admin-users-table th:last-child { width: 80px; text-align: center; }
+.club-shell .pace-users-page .admin-users-table th > button { padding: 0; background: transparent; }
+.club-shell .pace-users-page .admin-users-table td { height: 56px; padding: 8px 16px; border-color: var(--border); color: var(--foreground); font-size: 13px; }
+.club-shell .pace-users-page .admin-users-table .pace-user-avatar-column { padding-right: 0; }
+.pace-user-avatar { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--muted); color: var(--muted-foreground); font-size: 12px; font-weight: 600; }
+.club-shell .pace-users-page .pace-user-identity strong { font-size: 13px; font-weight: 500; }
+.club-shell .pace-users-page .pace-user-identity small { margin-top: 3px; color: var(--muted-foreground); font-size: 12px; overflow-wrap: anywhere; }
+.pace-user-roles { display: flex; flex-wrap: wrap; gap: 4px 10px; line-height: 1.6; }
+.pace-user-no-role { color: var(--muted-foreground); }
+.club-shell .pace-users-page .admin-user-action { display: table-cell; text-align: center; }
+.club-shell .pace-users-page .admin-user-action button { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 5px; background: transparent; color: var(--foreground); }
+.club-shell .pace-users-page .admin-user-action button:hover { background: var(--muted); }
+.club-shell .pace-users-page .admin-user-action svg { width: 18px; height: 18px; }
+.club-shell .pace-users-page .admin-pagination { padding: 16px 0 0; border: 0; background: transparent; }
+@media (max-width: 760px) {
+  .club-shell .pace-users-page .admin-card-header { align-items: flex-start; gap: 16px; }
+  .club-shell .pace-users-page .pace-users-toolbar .admin-users-search { flex-basis: 100%; }
+  .pace-users-filter { flex: 1 1 140px; min-width: 0; }
+  .club-shell .pace-users-page .admin-users-table th, .club-shell .pace-users-page .admin-users-table td { display: table-cell; }
+}
+@media (max-width: 760px) {
+  .club-shell .pace-users-page .admin-users-table:not(.admin-matches-table):not(.admin-registration-table) th:nth-child(2),
+  .club-shell .pace-users-page .admin-users-table:not(.admin-matches-table):not(.admin-registration-table) td:nth-child(2) { display: table-cell; }
+}
+.pace-users-header-actions .admin-button { flex: none; width: auto; white-space: nowrap; }

@@ -1,74 +1,110 @@
-import { Ban, CalendarDays, ChevronLeft, ChevronRight, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ChevronRight, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../servicos/api';
-import { calendarioService, type AgendaDisponibilidade, type DadosAgenda, type DiaDaSemana, type ExcecaoCalendario } from '../servicos/calendarioService';
+import { calendarioService, type ExcecaoCalendario } from '../servicos/calendarioService';
 import { adminConfiguracaoService } from '../servicos/adminConfiguracaoService';
 import { AvisoTemporario } from '../componentes/ui/AvisoTemporario';
 import { Confirmacao } from '../componentes/ui/Confirmacao';
-import { Sheet } from '../componentes/ui/painel-lateral';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Paginacao } from '../componentes/ui/Paginacao';
+import { CampoData } from '../componentes/ui/CampoData';
 import { StatusBadge } from '../componentes/ui/StatusBadge';
 
-const dias: Record<DiaDaSemana,string>={MONDAY:'Segunda',TUESDAY:'Terça',WEDNESDAY:'Quarta',THURSDAY:'Quinta',FRIDAY:'Sexta',SATURDAY:'Sábado',SUNDAY:'Domingo'};
-const tipos:Record<ExcecaoCalendario['tipo'],string>={FERIADO:'Feriado',RECESSO:'Recesso',BLOQUEIO:'Bloqueio'};
-const formatar=new Intl.DateTimeFormat('pt-BR');
-const hoje=new Date().toISOString().slice(0,10);
-const vazio=():DadosAgenda=>({nome:'',localId:'',modalidadeId:'',inicio:hoje,fim:`${new Date().getFullYear()+1}-12-31`,regras:[]});
-type StatusConfiguracao='ATIVO'|'BLOQUEADO'|'INATIVO';
-type TipoConfiguracao='AGENDA'|'INDISPONIBILIDADE';
-type LinhaConfiguracao={id:string;tipo:TipoConfiguracao;status:StatusConfiguracao;nome:string;detalhe:string;escopo:string;complemento:string;inicio:string;fim:string;horarios:string;quantidadeHorarios:number;agenda?:AgendaDisponibilidade;excecao?:ExcecaoCalendario};
-const rotulosStatus:Record<StatusConfiguracao,string>={ATIVO:'Ativo',BLOQUEADO:'Bloqueado',INATIVO:'Inativo'};
+const tipos: Record<ExcecaoCalendario['tipo'], string> = { FERIADO: 'Feriado', RECESSO: 'Recesso / emenda', BLOQUEIO: 'Manutenção / outro bloqueio' };
+const formatar = new Intl.DateTimeFormat('pt-BR');
+const mensagem = (erro: Error) => erro instanceof ApiError ? erro.detail : 'Não foi possível concluir a operação. Tente novamente.';
 
-export function AdminCalendarioPage(){
- const navigate=useNavigate();
- const location=useLocation();
- const [aviso,setAviso]=useState(()=>(location.state as {aviso?:string}|null)?.aviso??''),[aberta,setAberta]=useState(false),[editando,setEditando]=useState<AgendaDisponibilidade|null>(null),[form,setForm]=useState<DadosAgenda>(vazio);
- const [excAberta,setExcAberta]=useState(false),[excEditando,setExcEditando]=useState<ExcecaoCalendario|null>(null),[descricao,setDescricao]=useState(''),[tipo,setTipo]=useState<ExcecaoCalendario['tipo']>('FERIADO'),[inicio,setInicio]=useState(''),[fim,setFim]=useState('');
- const [busca,setBusca]=useState(''),[buscaAplicada,setBuscaAplicada]=useState(''),[statusFiltro,setStatusFiltro]=useState<StatusConfiguracao|'TODOS'>('TODOS'),[tipoFiltro,setTipoFiltro]=useState<TipoConfiguracao|'TODOS'>('TODOS'),[periodoFiltro,setPeriodoFiltro]=useState<'TODOS'|'VIGENTES'|'FUTUROS'|'ENCERRADOS'>('TODOS'),[pagina,setPagina]=useState(1);
- const agendas=useQuery({queryKey:['configuracoes','calendario','agendas'],queryFn:calendarioService.listarAgendas});
- const excecoes=useQuery({queryKey:['configuracoes','calendario','excecoes'],queryFn:calendarioService.listarExcecoes});
- const locais=useQuery({queryKey:['configuracoes','locais'],queryFn:adminConfiguracaoService.listarLocais});
- const modalidades=useQuery({queryKey:['configuracoes','modalidades'],queryFn:adminConfiguracaoService.listarModalidades});
- const categorias=useQuery({queryKey:['configuracoes','categorias'],queryFn:adminConfiguracaoService.listarCategorias});
- const salvar=useMutation({mutationFn:()=>editando?calendarioService.editarAgenda(editando.id,form):calendarioService.criarAgenda(form),onSuccess:()=>{setAberta(false);setAviso(`Agenda ${editando?'atualizada':'cadastrada'} com sucesso.`);void agendas.refetch();}});
- const excluir=useMutation({mutationFn:()=>calendarioService.excluirAgenda(editando!.id),onSuccess:()=>{setAberta(false);setAviso('Agenda inativada e mantida no histórico.');void agendas.refetch();}});
- const salvarExc=useMutation({mutationFn:()=>{const dados={descricao:descricao.trim(),tipo,inicio,fim};return excEditando?calendarioService.editarExcecao(excEditando.id,dados):calendarioService.criarExcecao(dados);},onSuccess:()=>{setExcAberta(false);void excecoes.refetch();}});
- const excluirExc=useMutation({mutationFn:()=>calendarioService.excluirExcecao(excEditando!.id),onSuccess:()=>{setExcAberta(false);setAviso('Bloqueio inativado e mantido no histórico.');void excecoes.refetch();}});
- const total=useMemo(()=>form.regras.reduce((n,r)=>n+r.horarios.length,0),[form.regras]);
- const invalido=!form.nome.trim()||!form.localId||!form.modalidadeId||!form.inicio||!form.fim||form.fim<form.inicio||!total;
- const mensagem=(e:Error)=>e instanceof ApiError?e.detail:'Não foi possível salvar a agenda.';
- useEffect(()=>{const temporizador=window.setTimeout(()=>setBuscaAplicada(busca),300);return()=>window.clearTimeout(temporizador)},[busca]);
- useEffect(()=>{if((location.state as {aviso?:string}|null)?.aviso)navigate(location.pathname,{replace:true,state:null})},[location.pathname,location.state,navigate]);
- const linhas=useMemo<LinhaConfiguracao[]>(()=>{
-  const linhasAgenda=(agendas.data??[]).map(a=>{const quantidade=a.regras.reduce((n,r)=>n+r.horarios.length,0);return {id:a.id,tipo:'AGENDA' as const,status:a.ativo!==false?'ATIVO' as const:'INATIVO' as const,nome:a.nome,detalhe:'Agenda recorrente',escopo:a.local,complemento:`${a.modalidade} · ${a.categoria??'Todas as categorias'}`,inicio:a.inicio,fim:a.fim,quantidadeHorarios:quantidade,horarios:a.regras.map(r=>`${dias[r.diaDaSemana]} ${r.horarios.map(h=>h.slice(0,5)).join(', ')}`).join(' · '),agenda:a};});
-  const linhasExcecao=(excecoes.data??[]).map(e=>({id:e.id,tipo:'INDISPONIBILIDADE' as const,status:e.ativo!==false?'BLOQUEADO' as const:'INATIVO' as const,nome:e.descricao,detalhe:tipos[e.tipo],escopo:'Todas as agendas',complemento:'Todos os locais e modalidades',inicio:e.inicio,fim:e.fim,quantidadeHorarios:0,horarios:'Agendamentos indisponíveis no período',excecao:e}));
-  return [...linhasAgenda,...linhasExcecao].sort((a,b)=>a.status===b.status?b.inicio.localeCompare(a.inicio):a.status==='INATIVO'?1:b.status==='INATIVO'?-1:0);
- },[agendas.data,excecoes.data]);
- const filtradas=useMemo(()=>{const termo=buscaAplicada.trim().toLocaleLowerCase('pt-BR');return linhas.filter(l=>{const texto=`${l.nome} ${l.detalhe} ${l.escopo} ${l.complemento} ${l.horarios}`.toLocaleLowerCase('pt-BR');const correspondePeriodo=periodoFiltro==='TODOS'||(periodoFiltro==='VIGENTES'&&l.inicio<=hoje&&l.fim>=hoje)||(periodoFiltro==='FUTUROS'&&l.inicio>hoje)||(periodoFiltro==='ENCERRADOS'&&l.fim<hoje);return(!termo||texto.includes(termo))&&(statusFiltro==='TODOS'||l.status===statusFiltro)&&(tipoFiltro==='TODOS'||l.tipo===tipoFiltro)&&correspondePeriodo})},[buscaAplicada,linhas,statusFiltro,tipoFiltro,periodoFiltro]);
- const quantidadeFiltros=Number(statusFiltro!=='TODOS')+Number(tipoFiltro!=='TODOS')+Number(periodoFiltro!=='TODOS');
- const itensPorPagina=10,totalPaginas=Math.max(1,Math.ceil(filtradas.length/itensPorPagina)),inicioPagina=(pagina-1)*itensPorPagina,paginadas=filtradas.slice(inicioPagina,inicioPagina+itensPorPagina);
- const limparFiltros=()=>{setBusca('');setBuscaAplicada('');setStatusFiltro('TODOS');setTipoFiltro('TODOS');setPeriodoFiltro('TODOS');setPagina(1)};
- useEffect(()=>setPagina(1),[buscaAplicada,statusFiltro,tipoFiltro,periodoFiltro]);
- const abrirLinha=(linha:LinhaConfiguracao)=>{if(linha.status==='INATIVO')return;if(linha.agenda)editar(linha.agenda);else if(linha.excecao)editarExc(linha.excecao)};
- function nova(){navigate('/admin/configuracoes/calendario/nova')}
- function editar(a:AgendaDisponibilidade){setEditando(a);setForm({nome:a.nome,localId:a.localId,modalidadeId:a.modalidadeId,categoriaId:a.categoriaId,inicio:a.inicio,fim:a.fim,regras:a.regras.map(r=>({...r,horarios:[...r.horarios]}))});salvar.reset();setAberta(true)}
- function alternar(d:DiaDaSemana){setForm(a=>({...a,regras:a.regras.some(r=>r.diaDaSemana===d)?a.regras.filter(r=>r.diaDaSemana!==d):[...a.regras,{diaDaSemana:d,horarios:['19:00']}]}))}
- function horario(d:DiaDaSemana,i:number,v:string){setForm(a=>({...a,regras:a.regras.map(r=>r.diaDaSemana===d?{...r,horarios:r.horarios.map((h,j)=>j===i?v:h)}:r)}))}
- function adicionar(d:DiaDaSemana){setForm(a=>({...a,regras:a.regras.map(r=>r.diaDaSemana===d?{...r,horarios:[...r.horarios,'20:00']}:r)}))}
- function remover(d:DiaDaSemana,i:number){setForm(a=>({...a,regras:a.regras.map(r=>r.diaDaSemana===d?{...r,horarios:r.horarios.filter((_,j)=>i!==j)}:r).filter(r=>r.horarios.length)}))}
- function novaExc(){setExcEditando(null);setDescricao('');setTipo('FERIADO');setInicio('');setFim('');setExcAberta(true)}
- function editarExc(e:ExcecaoCalendario){setExcEditando(e);setDescricao(e.descricao);setTipo(e.tipo);setInicio(e.inicio);setFim(e.fim);setExcAberta(true)}
- return <section className="admin-card admin-users-page admin-schedules-page" aria-labelledby="titulo-calendario">
-  <header className="admin-card-header"><div><h1 id="titulo-calendario">Agendas de partidas</h1><p>Gerencie agendas, bloqueios e o histórico de configurações do clube.</p></div><div className="admin-card-header-actions"><button className="admin-button admin-button-secondary" onClick={novaExc}><Ban/>Bloquear período</button><button className="admin-button admin-button-primary" onClick={nova}><Plus/>Nova agenda</button></div></header>
-  <article className="admin-users-panel admin-agendas-panel">
-   <div className="admin-users-toolbar admin-table-toolbar admin-schedule-toolbar"><label className="admin-users-search"><span className="sr-only">Buscar configurações</span><div><Search aria-hidden="true"/><input type="search" value={busca} onChange={e=>setBusca(e.target.value)} placeholder="Buscar por agenda, local, modalidade..."/></div></label><div className="admin-schedule-inline-filters"><label><span className="sr-only">Filtrar por status</span><select value={statusFiltro} onChange={e=>setStatusFiltro(e.target.value as StatusConfiguracao|'TODOS')}><option value="TODOS">Todos os status</option><option value="ATIVO">Ativo</option><option value="BLOQUEADO">Bloqueado</option><option value="INATIVO">Inativo</option></select></label><label><span className="sr-only">Filtrar por tipo</span><select value={tipoFiltro} onChange={e=>setTipoFiltro(e.target.value as TipoConfiguracao|'TODOS')}><option value="TODOS">Todos os tipos</option><option value="AGENDA">Agenda</option><option value="INDISPONIBILIDADE">Bloqueio de período</option></select></label><label><span className="sr-only">Filtrar por período</span><select value={periodoFiltro} onChange={e=>setPeriodoFiltro(e.target.value as typeof periodoFiltro)}><option value="TODOS">Todo o histórico</option><option value="VIGENTES">Vigentes hoje</option><option value="FUTUROS">Início futuro</option><option value="ENCERRADOS">Período encerrado</option></select></label>{(quantidadeFiltros>0||buscaAplicada)&&<button type="button" className="admin-user-clear-filters" onClick={limparFiltros}><RotateCcw aria-hidden="true"/>Limpar</button>}</div></div>
-   {(agendas.isPending||excecoes.isPending)&&<div className="admin-table-skeleton" aria-label="Carregando configurações"><span/><span/><span/><span/></div>}
-   {(agendas.isError||excecoes.isError)&&<div className="admin-inline-error" role="alert"><span>Não foi possível carregar as configurações de agenda.</span><button onClick={()=>{void agendas.refetch();void excecoes.refetch()}}>Tentar novamente</button></div>}
-   {!agendas.isPending&&!excecoes.isPending&&filtradas.length===0&&<div className="admin-empty-state"><CalendarDays/><h3>Nenhuma configuração encontrada</h3><p>Ajuste a busca e os filtros ou cadastre uma nova agenda.</p><button className="admin-button admin-button-secondary" onClick={limparFiltros}>Limpar filtros</button></div>}
-   {filtradas.length>0&&<><div className="admin-users-table-wrap"><table className="admin-users-table admin-agenda-table"><thead><tr><th>Configuração</th><th>Abrangência</th><th>Período</th><th>Horários</th><th>Status</th><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{paginadas.map(l=><tr key={`${l.tipo}-${l.id}`} className={l.status==='INATIVO'?'admin-schedule-inactive':''} onClick={()=>abrirLinha(l)}><td><strong>{l.nome}</strong><small>{l.detalhe}</small></td><td><strong>{l.escopo}</strong><small>{l.complemento}</small></td><td><span>{formatar.format(new Date(`${l.inicio}T12:00`))}</span><small>até {formatar.format(new Date(`${l.fim}T12:00`))}</small></td><td>{l.tipo==='AGENDA'?<><strong>{l.quantidadeHorarios} {l.quantidadeHorarios===1?'horário':'horários'}</strong><small title={l.horarios}>{l.horarios}</small></>:<small>{l.horarios}</small>}</td><td><StatusBadge status={l.status} rotulo={rotulosStatus[l.status]} /></td><td>{l.status!=='INATIVO'&&<button type="button" className="admin-table-open" aria-label={`Editar ${l.nome}`} onClick={e=>{e.stopPropagation();abrirLinha(l)}}><ChevronRight/></button>}</td></tr>)}</tbody></table></div><footer className="admin-schedule-pagination" role="status" aria-live="polite"><span>{busca!==buscaAplicada?'Filtrando…':`Exibindo ${inicioPagina+1} a ${Math.min(inicioPagina+itensPorPagina,filtradas.length)} de ${filtradas.length} resultados`}</span><div><button type="button" disabled={pagina===1} onClick={()=>setPagina(p=>Math.max(1,p-1))}><ChevronLeft/>Anterior</button><span>Página <b>{pagina}</b> de {totalPaginas}</span><button type="button" disabled={pagina===totalPaginas} onClick={()=>setPagina(p=>Math.min(totalPaginas,p+1))}>Próxima<ChevronRight/></button></div></footer></>}
-  </article>
-  <Sheet aberto={aberta} aoAlterar={setAberta} titulo={editando?'Editar agenda':'Nova agenda'} descricao="Defina a vigência e a recorrência semanal disponível para novas partidas."><form className="admin-sheet-section admin-sheet-form admin-agenda-form" onSubmit={(e:FormEvent)=>{e.preventDefault();if(!invalido)salvar.mutate()}}><label>Nome da agenda<input required maxLength={120} value={form.nome} onChange={e=>setForm({...form,nome:e.target.value})} placeholder="Ex.: Futebol de campo 2027"/></label><div className="admin-calendar-form-grid"><label>Local<select required value={form.localId} onChange={e=>setForm({...form,localId:e.target.value})}><option value="">Selecione</option>{locais.data?.map(l=><option key={l.id} value={l.id}>{l.nome}</option>)}</select></label><label>Modalidade<select required value={form.modalidadeId} onChange={e=>setForm({...form,modalidadeId:e.target.value,categoriaId:undefined})}><option value="">Selecione</option>{modalidades.data?.map(m=><option key={m.id} value={m.id}>{m.nome}</option>)}</select></label></div><label>Categoria <span>Opcional; vinculada à modalidade nesta agenda</span><select value={form.categoriaId??''} disabled={!form.modalidadeId} onChange={e=>setForm({...form,categoriaId:e.target.value?Number(e.target.value):undefined})}><option value="">Todas as categorias</option>{categorias.data?.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}</select></label><div className="admin-calendar-form-grid"><label>Início do período<input type="date" required max={form.fim} value={form.inicio} onChange={e=>setForm({...form,inicio:e.target.value})}/></label><label>Fim do período<input type="date" required min={form.inicio} value={form.fim} onChange={e=>setForm({...form,fim:e.target.value})}/></label></div><fieldset className="admin-agenda-week"><legend>Dias e horários disponíveis</legend><p>Selecione os dias e adicione um ou mais horários em cada um.</p>{(Object.entries(dias) as [DiaDaSemana,string][]).map(([d,nome])=>{const regra=form.regras.find(r=>r.diaDaSemana===d);return <section key={d} className={regra?'selected':''}><label><input type="checkbox" checked={Boolean(regra)} onChange={()=>alternar(d)}/><b>{nome}</b></label>{regra&&<div>{regra.horarios.map((h,i)=><span key={`${d}-${i}`}><input type="time" required value={h.slice(0,5)} onChange={e=>horario(d,i,e.target.value)}/><button type="button" onClick={()=>remover(d,i)} aria-label={`Remover horário de ${nome}`}><Trash2/></button></span>)}<button type="button" className="admin-add-time" onClick={()=>adicionar(d)}><Plus/>Horário</button></div>}</section>})}</fieldset><p className="admin-calendar-form-note"><CalendarDays/>A agenda vale somente entre as datas informadas, inclusive quando o período atravessa anos.</p>{salvar.isError&&<p className="admin-sheet-error">{mensagem(salvar.error)}</p>}<div className="admin-sheet-actions"><button type="button" className="admin-button admin-button-secondary" onClick={()=>setAberta(false)}>Cancelar</button><button className="admin-button admin-button-primary" disabled={invalido||salvar.isPending}>{salvar.isPending?'Salvando…':'Salvar agenda'}</button></div></form>{editando&&<div className="admin-danger-zone"><h3>Inativar agenda</h3><p>Partidas existentes e o histórico da configuração serão preservados.</p><Confirmacao acionador={<button className="admin-button admin-button-danger">Inativar agenda</button>} titulo="Inativar esta agenda?" descricao="Novas partidas deixarão de usar estes horários, mas o item continuará visível no histórico." rotuloConfirmacao="Inativar agenda" processando={excluir.isPending} aoConfirmar={()=>excluir.mutate()}/></div>}</Sheet>
-  <Sheet aberto={excAberta} aoAlterar={setExcAberta} titulo={excEditando?'Editar indisponibilidade':'Nova indisponibilidade'} descricao="Bloqueie uma data ou período em todas as agendas."><form className="admin-sheet-section admin-sheet-form" onSubmit={(e:FormEvent)=>{e.preventDefault();salvarExc.mutate()}}><label>Descrição<input required value={descricao} onChange={e=>setDescricao(e.target.value)}/></label><label>Tipo<select value={tipo} onChange={e=>setTipo(e.target.value as ExcecaoCalendario['tipo'])}>{Object.entries(tipos).map(([v,n])=><option value={v} key={v}>{n}</option>)}</select></label><div className="admin-calendar-form-grid"><label>Data inicial<input required type="date" value={inicio} onChange={e=>setInicio(e.target.value)}/></label><label>Data final<input required type="date" min={inicio} value={fim} onChange={e=>setFim(e.target.value)}/></label></div><div className="admin-sheet-actions"><button type="button" className="admin-button admin-button-secondary" onClick={()=>setExcAberta(false)}>Cancelar</button><button className="admin-button admin-button-primary" disabled={!descricao.trim()||!inicio||!fim||fim<inicio}>Salvar período</button></div></form>{excEditando&&<div className="admin-danger-zone"><h3>Inativar bloqueio</h3><p>O período permanecerá no histórico de configurações.</p><Confirmacao acionador={<button className="admin-button admin-button-danger">Inativar período</button>} titulo="Inativar período?" descricao="As datas voltarão a aceitar agendamentos, e o item continuará visível no histórico." rotuloConfirmacao="Inativar período" processando={excluirExc.isPending} aoConfirmar={()=>excluirExc.mutate()}/></div>}</Sheet>
-  {aviso&&<AvisoTemporario mensagem={aviso} aoFechar={()=>setAviso('')}/>}</section>
+export function AdminCalendarioPage() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { bloqueioId } = useParams();
+  const [pagina, setPagina] = useState(1);
+  const [itensPorPagina, setItensPorPagina] = useState(10);
+  const voltar = () => navigate('/admin/configuracoes/calendario');
+  const [aviso, setAviso] = useState('');
+  const [busca, setBusca] = useState('');
+  const [localFiltro, setLocalFiltro] = useState('TODOS');
+  const [statusFiltro, setStatusFiltro] = useState('TODOS');
+  const [excEditando, setExcEditando] = useState<ExcecaoCalendario | null>(null);
+  const [descricao, setDescricao] = useState('');
+  const [tipo, setTipo] = useState<ExcecaoCalendario['tipo']>('FERIADO');
+  const [localId, setLocalId] = useState('');
+  const [inicio, setInicio] = useState('');
+  const [fim, setFim] = useState('');
+  const excecoes = useQuery({ queryKey: ['configuracoes', 'calendario', 'excecoes'], queryFn: calendarioService.listarExcecoes });
+  const locais = useQuery({ queryKey: ['configuracoes', 'locais'], queryFn: adminConfiguracaoService.listarLocais });
+  async function atualizar(texto: string) {
+    setAviso(texto);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['configuracoes', 'calendario'] }),
+      queryClient.invalidateQueries({ queryKey: ['calendario'] }),
+    ]);
+  }
+  const salvarExc = useMutation({
+    mutationFn: () => {
+      const dados = { descricao: descricao.trim(), tipo, inicio, fim, localId: localId || null };
+      return excEditando ? calendarioService.editarExcecao(excEditando.id, dados) : calendarioService.criarExcecao(dados);
+    },
+    onSuccess: () => { voltar(); return atualizar('Bloqueio salvo no calendário.'); },
+  });
+  const excluirExc = useMutation({
+    mutationFn: () => calendarioService.excluirExcecao(excEditando!.id),
+    onSuccess: () => { voltar(); return atualizar('Bloqueio inativado e mantido no histórico.'); },
+  });
+  const filtradas = useMemo(() => (excecoes.data ?? []).filter(e => {
+    const termo = busca.trim().toLocaleLowerCase('pt-BR');
+    return `${e.descricao} ${tipos[e.tipo]} ${e.local ?? 'Clube inteiro'}`.toLocaleLowerCase('pt-BR').includes(termo)
+      && (localFiltro === 'TODOS' || (localFiltro === 'GERAL' ? !e.localId : e.localId === localFiltro))
+      && (statusFiltro === 'TODOS' || (statusFiltro === 'ATIVO' ? e.ativo : !e.ativo));
+  }), [excecoes.data, busca, localFiltro, statusFiltro]);
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / itensPorPagina));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const itensDaPagina = filtradas.slice((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina);
+  useEffect(() => setPagina(1), [busca, localFiltro, statusFiltro, itensPorPagina]);
+  const registro = excecoes.data?.find(e => e.id === bloqueioId);
+  useEffect(() => {
+    setExcEditando(registro ?? null); setDescricao(registro?.descricao ?? ''); setTipo(registro?.tipo ?? 'FERIADO');
+    setLocalId(registro?.localId ?? ''); setInicio(registro?.inicio ?? ''); setFim(registro?.fim ?? '');
+  }, [registro, bloqueioId]);
+  function abrirExcecao(excecao?: ExcecaoCalendario) {
+    salvarExc.reset(); excluirExc.reset();
+    navigate(`/admin/configuracoes/calendario/${excecao?.id ?? 'novo'}`);
+  }
+  const excecaoValida = descricao.trim() && inicio && fim && fim >= inicio;
+  if (bloqueioId) {
+    if (bloqueioId !== 'novo' && excecoes.isPending) return <div className="admin-table-skeleton"><span /><span /><span /></div>;
+    if (bloqueioId !== 'novo' && excecoes.isError) return <div className="admin-inline-error" role="alert">Não foi possível carregar o bloqueio.<button onClick={() => void excecoes.refetch()}>Tentar novamente</button></div>;
+    if (bloqueioId !== 'novo' && (!registro || !registro.ativo)) return <div className="admin-empty-state"><h3>{registro ? 'Este bloqueio está inativo' : 'Bloqueio não encontrado'}</h3><Link to="/admin/configuracoes/calendario">Voltar aos bloqueios</Link></div>;
+    return <section className="admin-create-match" aria-labelledby="titulo-bloqueio-form">
+      <header className="admin-create-heading"><div><button type="button" aria-label="Voltar" onClick={voltar}><ArrowLeft /></button><div><h1 id="titulo-bloqueio-form">{bloqueioId === 'novo' ? 'Cadastrar bloqueio' : 'Editar bloqueio'}</h1><p>Defina o período e os locais afetados pelo bloqueio.</p></div></div></header>
+      <div className="admin-create-grid"><div className="admin-create-main"><section className="admin-form-card"><header><h2>Dados do bloqueio</h2><p>As datas inicial e final são incluídas no bloqueio, durante o dia inteiro.</p></header>
+      <form id="form-bloqueio" className="admin-form-fields admin-form-fields-two" onSubmit={(e: FormEvent) => { e.preventDefault(); if (excecaoValida) salvarExc.mutate(); }}>
+        <label className="admin-form-field-full">Descrição<input required maxLength={150} value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex.: manutenção do gramado" /></label>
+        <label>Tipo<select value={tipo} onChange={e => setTipo(e.target.value as ExcecaoCalendario['tipo'])}>{Object.entries(tipos).map(([valor, nome]) => <option value={valor} key={valor}>{nome}</option>)}</select></label>
+        <label>Abrangência<select value={localId} onChange={e => setLocalId(e.target.value)}><option value="">Clube inteiro — todos os locais</option>{locais.data?.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}</select></label>
+        {locais.isPending && <p>Carregando locais…</p>}{locais.isError && <div role="alert">Não foi possível carregar os locais.<button type="button" onClick={() => void locais.refetch()}>Tentar novamente</button></div>}
+        <CampoData titulo="Data inicial" valor={inicio} max={fim || undefined} aoAlterar={valor => { setInicio(valor); if (!fim) setFim(valor); }} />
+        <CampoData titulo="Data final" valor={fim} min={inicio || undefined} aoAlterar={setFim} />
+        <p className="admin-form-field-full">Partidas já cadastradas serão preservadas. Revise-as caso sejam afetadas por este bloqueio.</p>
+        {salvarExc.isError && <p role="alert" className="admin-sheet-error">{mensagem(salvarExc.error)}</p>}
+        <div className="admin-sheet-actions admin-form-field-full"><button type="button" className="admin-button admin-button-secondary" onClick={voltar}>Cancelar</button><button className="admin-button admin-button-primary" disabled={!excecaoValida || salvarExc.isPending || excluirExc.isPending || !locais.isSuccess || (Boolean(bloqueioId !== 'novo') && !registro?.ativo)}>{salvarExc.isPending ? 'Salvando…' : 'Salvar bloqueio'}</button></div>
+      </form>
+      {excEditando && <div className="admin-danger-zone"><Confirmacao acionador={<button className="admin-button admin-button-danger">Inativar bloqueio</button>} titulo="Inativar este bloqueio?" descricao="O bloqueio deixará de valer. Os demais bloqueios continuarão sendo respeitados, e o registro permanecerá no histórico." rotuloConfirmacao="Inativar bloqueio" processando={excluirExc.isPending} aoConfirmar={() => excluirExc.mutate()} />{excluirExc.isError && <p role="alert">{mensagem(excluirExc.error)}</p>}</div>}
+      </section></div><aside className="admin-create-side"><section className="admin-form-card"><header><h2>Resumo</h2></header><div className="admin-config-edit-summary"><strong>{descricao || 'Novo bloqueio'}</strong><span>{tipos[tipo]}</span><small>{locais.data?.find(local => local.id === localId)?.nome ?? 'Clube inteiro'}</small>{inicio && fim && <small>{formatar.format(new Date(`${inicio}T12:00`))} até {formatar.format(new Date(`${fim}T12:00`))}</small>}</div></section></aside></div>
+    </section>;
+  }
+  return <section className="admin-card admin-users-page" aria-labelledby="titulo-calendario">
+    <header className="admin-card-header"><div><h1 id="titulo-calendario">Bloqueios de Calendário</h1><p>Cadastre feriados, emendas e bloqueios para o clube inteiro ou para um local específico.</p></div><button className="admin-button admin-button-primary" onClick={() => abrirExcecao()}><Plus />Cadastrar bloqueio</button></header>
+    <article className="admin-users-panel">
+      <div className="admin-users-toolbar admin-table-toolbar"><label className="admin-users-search"><span className="sr-only">Buscar bloqueios</span><div><Search /><input type="search" value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar descrição ou local…" /></div></label><label className="admin-local-filter">Abrangência<select value={localFiltro} onChange={e => setLocalFiltro(e.target.value)}><option value="TODOS">Todas as abrangências</option><option value="GERAL">Clube inteiro</option>{locais.data?.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}</select></label><label className="admin-local-filter">Status<select value={statusFiltro} onChange={e => setStatusFiltro(e.target.value)}><option value="TODOS">Todo o histórico</option><option value="ATIVO">Ativos</option><option value="INATIVO">Inativos</option></select></label></div>
+      {excecoes.isSuccess && <div className="admin-filter-feedback" role="status"><span>{filtradas.length} {filtradas.length === 1 ? 'registro encontrado' : 'registros encontrados'}</span>{(busca || localFiltro !== 'TODOS' || statusFiltro !== 'TODOS') && <b>Filtro aplicado</b>}</div>}
+      {excecoes.isPending && <div className="admin-table-skeleton"><span /><span /><span /></div>}
+      {excecoes.isError && <div className="admin-inline-error" role="alert">Não foi possível carregar os bloqueios.<button onClick={() => void excecoes.refetch()}>Tentar novamente</button></div>}
+      {excecoes.isSuccess && filtradas.length === 0 && <div className="admin-empty-state"><CalendarDays /><h3>Nenhum bloqueio encontrado</h3><p>Cadastre um bloqueio ou ajuste os filtros.</p></div>}
+      {filtradas.length > 0 && <div className="admin-users-table-wrap"><table className="admin-users-table admin-config-table"><thead><tr><th>Descrição</th><th>Abrangência</th><th>Período</th><th>Status</th><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{itensDaPagina.map(e => <tr key={e.id} onClick={() => { if (e.ativo) abrirExcecao(e); }}><td><strong>{e.descricao}</strong><small>{tipos[e.tipo]}</small></td><td>{e.local ?? 'Clube inteiro'}</td><td>{formatar.format(new Date(`${e.inicio}T12:00`))}<small>até {formatar.format(new Date(`${e.fim}T12:00`))}</small></td><td><StatusBadge status={e.ativo ? 'ATIVO' : 'INATIVO'} rotulo={e.ativo ? 'Ativo' : 'Inativo'} /></td><td className="admin-user-action">{e.ativo && <button type="button" onClick={evento => { evento.stopPropagation(); abrirExcecao(e); }} aria-label={`Editar ${e.descricao}`}><ChevronRight /></button>}</td></tr>)}</tbody></table></div>}
+      {filtradas.length > 0 && <Paginacao total={filtradas.length} rotuloSingular="bloqueio" rotuloPlural="bloqueios" pagina={paginaAtual} totalPaginas={totalPaginas} itensPorPagina={itensPorPagina} aoMudarPagina={setPagina} aoMudarItensPorPagina={setItensPorPagina} />}
+    </article>
+    {aviso && <AvisoTemporario mensagem={aviso} aoFechar={() => setAviso('')} />}
+  </section>;
 }

@@ -1,7 +1,11 @@
 import { api } from './api';
 import type { UsuarioResumo } from './tipos';
 
+export type PerfilAdministrativo = 'ADMINISTRADOR' | 'ORGANIZADOR' | 'ARBITRO';
+export type DadosCriacaoUsuario = { nome: string; email: string; senha: string; papeis: PerfilAdministrativo[] };
+
 export const adminUsuarioService = {
+  criar: (dados: DadosCriacaoUsuario) => api.post<UsuarioResumo>('/api/admin/usuarios', dados),
   listar: () => api.get<UsuarioResumo[]>('/api/admin/usuarios'),
 
   atualizar: (usuarioId: string, dados: { nome: string; email: string; versao: number }) =>

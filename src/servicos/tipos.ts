@@ -54,14 +54,17 @@ export interface Jogador {
   aprovadoEm: string;
 }
 
-export type StatusPartida = 'RASCUNHO' | 'ABERTA' | 'LOTADA' | 'ENCERRADA' | 'FINALIZADA' | 'CANCELADA';
+export type StatusPartida = 'RASCUNHO' | 'ABERTA' | 'LOTADA' | 'ENCERRADA' | 'FINALIZADA' | 'CANCELADA' | 'EXCLUIDA';
 
 export interface Modalidade {
+  ativo?: boolean;
   id: string;
   nome: string;
 }
 
 export interface LocalPartida {
+  ativo?: boolean;
+  modalidadeIds?: string[];
   id: string;
   nome: string;
   descricao: string | null;
@@ -75,6 +78,8 @@ export interface Equipe {
 }
 
 export interface Partida {
+  modalidadeId?: string;
+  duracaoMinutos: number;
   id: string;
   modalidade: string;
   local: string;
