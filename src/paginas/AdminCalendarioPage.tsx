@@ -1,9 +1,10 @@
+import { useAuth } from '../contexto/useAuth';
+import { pode } from '../seguranca/permissoes';
 import { ArrowLeft, CalendarDays, ChevronRight, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../servicos/api';
 import { calendarioService, type ExcecaoCalendario } from '../servicos/calendarioService';
-import { adminConfiguracaoService } from '../servicos/adminConfiguracaoService';
 import { AvisoTemporario } from '../componentes/ui/AvisoTemporario';
 import { Confirmacao } from '../componentes/ui/Confirmacao';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -16,6 +17,7 @@ const formatar = new Intl.DateTimeFormat('pt-BR');
 const mensagem = (erro: Error) => erro instanceof ApiError ? erro.detail : 'Não foi possível concluir a operação. Tente novamente.';
 
 export function AdminCalendarioPage() {
+  const { usuario: operador } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { bloqueioId } = useParams();
@@ -33,7 +35,7 @@ export function AdminCalendarioPage() {
   const [inicio, setInicio] = useState('');
   const [fim, setFim] = useState('');
   const excecoes = useQuery({ queryKey: ['configuracoes', 'calendario', 'excecoes'], queryFn: calendarioService.listarExcecoes });
-  const locais = useQuery({ queryKey: ['configuracoes', 'locais'], queryFn: adminConfiguracaoService.listarLocais });
+  const locais = useQuery({ queryKey: ['configuracoes', 'calendario', 'locais'], queryFn: calendarioService.listarLocaisParaBloqueio });
   async function atualizar(texto: string) {
     setAviso(texto);
     await Promise.all([
@@ -88,14 +90,14 @@ export function AdminCalendarioPage() {
         <CampoData titulo="Data final" valor={fim} min={inicio || undefined} aoAlterar={setFim} />
         <p className="admin-form-field-full">Partidas já cadastradas serão preservadas. Revise-as caso sejam afetadas por este bloqueio.</p>
         {salvarExc.isError && <p role="alert" className="admin-sheet-error">{mensagem(salvarExc.error)}</p>}
-        <div className="admin-sheet-actions admin-form-field-full"><button type="button" className="admin-button admin-button-secondary" onClick={voltar}>Cancelar</button><button className="admin-button admin-button-primary" disabled={!excecaoValida || salvarExc.isPending || excluirExc.isPending || !locais.isSuccess || (Boolean(bloqueioId !== 'novo') && !registro?.ativo)}>{salvarExc.isPending ? 'Salvando…' : 'Salvar bloqueio'}</button></div>
+        <div className="admin-sheet-actions admin-form-field-full"><button type="button" className="admin-button admin-button-secondary" onClick={voltar}>Cancelar</button><button className="admin-button admin-button-primary" disabled={!pode(operador, 'CALENDARIO_GERENCIAR') || !excecaoValida || salvarExc.isPending || excluirExc.isPending || !locais.isSuccess || (Boolean(bloqueioId !== 'novo') && !registro?.ativo)}>{salvarExc.isPending ? 'Salvando…' : 'Salvar bloqueio'}</button></div>
       </form>
-      {excEditando && <div className="admin-danger-zone"><Confirmacao acionador={<button className="admin-button admin-button-danger">Inativar bloqueio</button>} titulo="Inativar este bloqueio?" descricao="O bloqueio deixará de valer. Os demais bloqueios continuarão sendo respeitados, e o registro permanecerá no histórico." rotuloConfirmacao="Inativar bloqueio" processando={excluirExc.isPending} aoConfirmar={() => excluirExc.mutate()} />{excluirExc.isError && <p role="alert">{mensagem(excluirExc.error)}</p>}</div>}
+      {excEditando && pode(operador, 'CALENDARIO_GERENCIAR') && <div className="admin-danger-zone"><Confirmacao acionador={<button className="admin-button admin-button-danger">Inativar bloqueio</button>} titulo="Inativar este bloqueio?" descricao="O bloqueio deixará de valer. Os demais bloqueios continuarão sendo respeitados, e o registro permanecerá no histórico." rotuloConfirmacao="Inativar bloqueio" processando={excluirExc.isPending} aoConfirmar={() => excluirExc.mutate()} />{excluirExc.isError && <p role="alert">{mensagem(excluirExc.error)}</p>}</div>}
       </section></div><aside className="admin-create-side"><section className="admin-form-card"><header><h2>Resumo</h2></header><div className="admin-config-edit-summary"><strong>{descricao || 'Novo bloqueio'}</strong><span>{tipos[tipo]}</span><small>{locais.data?.find(local => local.id === localId)?.nome ?? 'Clube inteiro'}</small>{inicio && fim && <small>{formatar.format(new Date(`${inicio}T12:00`))} até {formatar.format(new Date(`${fim}T12:00`))}</small>}</div></section></aside></div>
     </section>;
   }
   return <section className="admin-card admin-users-page" aria-labelledby="titulo-calendario">
-    <header className="admin-card-header"><div><h1 id="titulo-calendario">Bloqueios de Calendário</h1><p>Cadastre feriados, emendas e bloqueios para o clube inteiro ou para um local específico.</p></div><button className="admin-button admin-button-primary" onClick={() => abrirExcecao()}><Plus />Cadastrar bloqueio</button></header>
+    <header className="admin-card-header"><div><h1 id="titulo-calendario">Bloqueios de Calendário</h1><p>Cadastre feriados, emendas e bloqueios para o clube inteiro ou para um local específico.</p></div><button disabled={!pode(operador, 'CALENDARIO_GERENCIAR')} className="admin-button admin-button-primary" onClick={() => abrirExcecao()}><Plus />Cadastrar bloqueio</button></header>
     <article className="admin-users-panel">
       <div className="admin-users-toolbar admin-table-toolbar"><label className="admin-users-search"><span className="sr-only">Buscar bloqueios</span><div><Search /><input type="search" value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar descrição ou local…" /></div></label><label className="admin-local-filter">Abrangência<select value={localFiltro} onChange={e => setLocalFiltro(e.target.value)}><option value="TODOS">Todas as abrangências</option><option value="GERAL">Clube inteiro</option>{locais.data?.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}</select></label><label className="admin-local-filter">Status<select value={statusFiltro} onChange={e => setStatusFiltro(e.target.value)}><option value="TODOS">Todo o histórico</option><option value="ATIVO">Ativos</option><option value="INATIVO">Inativos</option></select></label></div>
       {excecoes.isSuccess && <div className="admin-filter-feedback" role="status"><span>{filtradas.length} {filtradas.length === 1 ? 'registro encontrado' : 'registros encontrados'}</span>{(busca || localFiltro !== 'TODOS' || statusFiltro !== 'TODOS') && <b>Filtro aplicado</b>}</div>}

@@ -1,3 +1,4 @@
+import { destinoInicial } from '../seguranca/permissoes';
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
@@ -40,14 +41,8 @@ export function LoginPage() {
 
       if (destinoOriginal) {
         navigate(destinoOriginal, { replace: true });
-      } else if (usuario.papeis.includes('ADMINISTRADOR')) {
-        navigate('/admin', { replace: true });
-      } else if (usuario.papeis.includes('ORGANIZADOR')) {
-        navigate('/organizador', { replace: true });
-      } else if (usuario.papeis.includes('ARBITRO')) {
-        navigate('/arbitro', { replace: true });
       } else {
-        navigate('/partidas', { replace: true });
+        navigate(destinoInicial(usuario), { replace: true });
       }
     } catch (falha) {
       setErro(

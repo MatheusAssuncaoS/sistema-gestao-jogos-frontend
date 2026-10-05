@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderToString } from 'react-dom/server';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { AdminEditarPartidaPage } from './AdminEditarPartidaPage';
 import type { Partida } from '../servicos/tipos';
 
@@ -32,3 +32,5 @@ it.each(['RASCUNHO', 'ABERTA', 'CANCELADA', 'EXCLUIDA'] as const)('renderiza a p
     client.clear();
   }
 });
+
+vi.mock('../contexto/useAuth', () => ({ useAuth: () => ({ usuario: { papeis: ['ADMINISTRADOR'], permissoes: ['PARTIDAS_VISUALIZAR', 'PARTIDAS_EDITAR', 'PARTIDAS_ABRIR', 'PARTIDAS_CANCELAR', 'PARTIDAS_EXCLUIR', 'PARTIDAS_INSCRITOS'] } }) }));

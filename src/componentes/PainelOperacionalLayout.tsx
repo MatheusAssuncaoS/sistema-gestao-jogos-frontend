@@ -1,14 +1,14 @@
+import { acessoAdministrativo, pode } from '../seguranca/permissoes';
 import { useState, type ComponentType, type ReactNode } from 'react';
-import { ChevronDown, CircleUserRound, Gamepad2, LogOut, Menu, ShieldCheck, Timer, Trophy, X, type LucideProps } from 'lucide-react';
+import { ChevronDown, CircleUserRound, Gamepad2, LogOut, Menu, ShieldCheck, Timer, X, type LucideProps } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexto/useAuth';
 
-type Ambiente = 'organizador' | 'arbitro';
+type Ambiente = 'arbitro';
 type Icone = ComponentType<LucideProps>;
 
 const configuracao: Record<Ambiente, { titulo: string; subtitulo: string; secao: string; icone: Icone }> = {
-  organizador: { titulo: 'Organização', subtitulo: 'Gestão de partidas do clube', secao: 'Partidas', icone: Trophy },
   arbitro: { titulo: 'Arbitragem', subtitulo: 'Preparação e condução de partidas', secao: 'Central do árbitro', icone: Timer },
 };
 
@@ -20,9 +20,8 @@ export function PainelOperacionalLayout({ ambiente, children }: { ambiente: Ambi
   const atual = configuracao[ambiente];
   const IconeAtual = atual.icone;
   const ambientes = [
-    { rotulo: 'Administração', rota: '/admin', icone: ShieldCheck, disponivel: usuario?.papeis.includes('ADMINISTRADOR') },
-    { rotulo: 'Organização', rota: '/organizador', icone: Trophy, disponivel: usuario?.papeis.includes('ORGANIZADOR') },
-    { rotulo: 'Arbitragem', rota: '/arbitro', icone: Timer, disponivel: usuario?.papeis.includes('ARBITRO') },
+    { rotulo: 'Administração', rota: '/admin', icone: ShieldCheck, disponivel: acessoAdministrativo(usuario) },
+    { rotulo: 'Arbitragem', rota: '/arbitro', icone: Timer, disponivel: pode(usuario, 'ARBITRAGEM_VISUALIZAR') },
     { rotulo: 'Jogador', rota: '/partidas', icone: Gamepad2, disponivel: usuario?.papeis.includes('JOGADOR') },
   ].filter((item) => item.disponivel);
 

@@ -25,6 +25,7 @@ export type DiaDaSemana = DiaFuncionamento['diaDaSemana'];
  * com 409 (RN06/RN07) — melhor já oferecer só os horários válidos.
  */
 export const calendarioService = {
+  listarLocaisParaBloqueio: () => api.get<import('./tipos').LocalPartida[]>('/api/admin/calendario/locais'),
   listarBloqueios: () => api.get<ExcecaoCalendario[]>('/api/calendario/excecoes'),
   listarHorariosDisponiveis: (dias = 730, localId?: string) => {
     const parametros = new URLSearchParams({ dias: String(dias) });

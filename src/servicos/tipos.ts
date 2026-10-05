@@ -16,6 +16,8 @@ export interface Usuario {
   email: string;
   status: StatusUsuario;
   papeis: Papel[];
+  permissoes?: string[];
+  perfis?: import('./perfilAcessoService').PerfilAcesso[];
   senhaProvisoria: boolean;
 }
 
@@ -23,8 +25,11 @@ export interface UsuarioResumo {
   id: string;
   nome: string;
   email: string;
+  fotoUrl?: string | null;
   status: StatusUsuario;
   papeis: Papel[];
+  permissoes?: string[];
+  perfis?: import('./perfilAcessoService').PerfilAcesso[];
   versao: number;
 }
 
@@ -48,6 +53,7 @@ export interface Jogador {
   usuarioId: string;
   nome: string;
   email: string;
+  fotoUrl?: string | null;
   matriculaAssociado: string | null;
   categoria: string | null;
   situacaoAssociativa: SituacaoAssociativa;
@@ -74,6 +80,7 @@ export interface Equipe {
   id: string;
   nome: string;
   cor: string;
+  corHex: string;
   capacidade: number;
 }
 

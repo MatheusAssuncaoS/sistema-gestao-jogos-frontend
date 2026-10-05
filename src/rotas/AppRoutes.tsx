@@ -8,11 +8,16 @@ import { RotaProtegida } from './RotaProtegida';
 const Layout = lazy(() => import('../componentes/Layout').then((modulo) => ({ default: modulo.Layout })));
 const AdminLayout = lazy(() => import('../componentes/AdminLayout').then((modulo) => ({ default: modulo.AdminLayout })));
 const AdminHome = lazy(() => import('../paginas/AdminHome').then((modulo) => ({ default: modulo.AdminHome })));
+const AdminPerfilFormPage = lazy(() => import('../paginas/AdminPerfilFormPage').then(modulo => ({ default: modulo.AdminPerfilFormPage })));
 const AdminPerfisAcessoPage = lazy(() => import('../paginas/AdminPerfisAcessoPage').then(modulo => ({ default: modulo.AdminPerfisAcessoPage })));
 const AdminCriarUsuarioPage = lazy(() => import('../paginas/AdminCriarUsuarioPage').then(modulo => ({ default: modulo.AdminCriarUsuarioPage })));
+const AdminCriarJogadorPage = lazy(() => import('../paginas/AdminCriarJogadorPage').then(modulo => ({ default: modulo.AdminCriarJogadorPage })));
 const AdminEditarUsuarioPage = lazy(() => import('../paginas/AdminEditarUsuarioPage').then(modulo => ({ default: modulo.AdminEditarUsuarioPage })));
 const AdminUsuariosPage = lazy(() => import('../paginas/AdminUsuariosPage').then((modulo) => ({ default: modulo.AdminUsuariosPage })));
 const AdminJogadoresPage = lazy(() => import('../paginas/AdminJogadoresPage').then((modulo) => ({ default: modulo.AdminJogadoresPage })));
+const AdminSuspensoesPage = lazy(() => import('../paginas/AdminSuspensoesPage').then((modulo) => ({ default: modulo.AdminSuspensoesPage })));
+const AdminTiposSuspensaoPage = lazy(() => import('../paginas/AdminTiposSuspensaoPage').then((modulo) => ({ default: modulo.AdminTiposSuspensaoPage })));
+const AdminCriarSuspensaoPage = lazy(() => import('../paginas/AdminCriarSuspensaoPage').then((modulo) => ({ default: modulo.AdminCriarSuspensaoPage })));
 const AdminPartidasPage = lazy(() => import('../paginas/AdminPartidasPage').then((modulo) => ({ default: modulo.AdminPartidasPage })));
 const AdminNovaPartidaPage = lazy(() => import('../paginas/AdminNovaPartidaPage').then((modulo) => ({ default: modulo.AdminNovaPartidaPage })));
 const AdminEditarPartidaPage = lazy(() => import('../paginas/AdminEditarPartidaPage').then((modulo) => ({ default: modulo.AdminEditarPartidaPage })));
@@ -28,7 +33,6 @@ const LoginPage = lazy(() => import('../paginas/LoginPage').then((modulo) => ({ 
 const MinhasInscricoesPage = lazy(() => import('../paginas/MinhasInscricoesPage').then((modulo) => ({ default: modulo.MinhasInscricoesPage })));
 const MeusDadosPage = lazy(() => import('../paginas/MeusDadosPage').then((modulo) => ({ default: modulo.MeusDadosPage })));
 const NaoEncontradaPage = lazy(() => import('../paginas/NaoEncontradaPage').then((modulo) => ({ default: modulo.NaoEncontradaPage })));
-const OrganizadorHome = lazy(() => import('../paginas/OrganizadorHome').then((modulo) => ({ default: modulo.OrganizadorHome })));
 const RecuperarSenhaPage = lazy(() => import('../paginas/RecuperarSenhaPage').then((modulo) => ({ default: modulo.RecuperarSenhaPage })));
 const TrocarSenhaPage = lazy(() => import('../paginas/TrocarSenhaPage').then((modulo) => ({ default: modulo.TrocarSenhaPage })));
 
@@ -73,9 +77,7 @@ export function AppRoutes() {
             <Route path="/minhas-inscricoes" element={<MinhasInscricoesPage />} />
           </Route>
 
-          <Route element={<RotaPorPapel papelExigido="ORGANIZADOR" />}>
-            <Route path="/organizador" element={<OrganizadorHome />} />
-          </Route>
+          <Route path="/organizador" element={<Navigate to="/admin/partidas" replace />} />
 
           <Route element={<RotaPorPapel papelExigido="ARBITRO" />}>
             <Route path="/arbitro" element={<ArbitroPage />} />
@@ -84,11 +86,18 @@ export function AppRoutes() {
           <Route element={<RotaPorPapel papelExigido="ADMINISTRADOR" />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminHome />} />
+              <Route path="seguranca/perfis/novo" element={<AdminPerfilFormPage />} />
+              <Route path="seguranca/perfis/:perfilId" element={<AdminPerfilFormPage />} />
               <Route path="seguranca/perfis" element={<AdminPerfisAcessoPage />} />
               <Route path="seguranca/usuarios/novo" element={<AdminCriarUsuarioPage />} />
               <Route path="seguranca/usuarios/:usuarioId" element={<AdminEditarUsuarioPage />} />
               <Route path="seguranca/usuarios" element={<AdminUsuariosPage />} />
               <Route path="usuarios" element={<AdminJogadoresPage />} />
+              <Route path="usuarios/novo" element={<AdminCriarJogadorPage />} />
+              <Route path="suspensoes" element={<AdminSuspensoesPage />} />
+              <Route path="configuracoes/tipos-suspensao" element={<AdminTiposSuspensaoPage />} />
+              <Route path="suspensoes/nova" element={<AdminCriarSuspensaoPage />} />
+              <Route path="usuarios/:usuarioId" element={<AdminEditarUsuarioPage />} />
               <Route path="cadastros" element={<AdminCadastrosPage />} />
               <Route path="jogadores" element={<Navigate to="/admin/usuarios" replace />} />
               <Route path="organizadores" element={<Navigate to="/admin/usuarios" replace />} />

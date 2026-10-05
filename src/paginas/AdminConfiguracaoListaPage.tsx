@@ -1,3 +1,5 @@
+import { useAuth } from '../contexto/useAuth';
+import { pode } from '../seguranca/permissoes';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -16,6 +18,7 @@ const dadosConfiguracao = {
 };
 
 export function AdminConfiguracaoListaPage({ tipo }: { tipo: TipoConfiguracao }) {
+  const { usuario: operador } = useAuth();
   const dados = dadosConfiguracao[tipo];
   const navigate = useNavigate();
   const [parametros, setParametros] = useSearchParams();
@@ -33,7 +36,7 @@ export function AdminConfiguracaoListaPage({ tipo }: { tipo: TipoConfiguracao })
   useEffect(() => { if (pagina > totalPaginas) setPagina(totalPaginas); }, [pagina, totalPaginas]);
   const abrir = (id: string | number) => navigate(`/admin/configuracoes/${tipo}/${id}`);
   return <section className="admin-card admin-users-page" aria-labelledby={`titulo-${tipo}`}>
-    <header className="admin-card-header"><div><h1 id={`titulo-${tipo}`}>{dados.titulo}</h1><p>{dados.descricao}</p></div><Link className="admin-button admin-button-primary" to={`/admin/configuracoes/${tipo}/novo`}><Plus />Cadastrar {dados.singular}</Link></header>
+    <header className="admin-card-header"><div><h1 id={`titulo-${tipo}`}>{dados.titulo}</h1><p>{dados.descricao}</p></div>{pode(operador, 'CADASTROS_GERENCIAR') && <Link className="admin-button admin-button-primary" to={`/admin/configuracoes/${tipo}/novo`}><Plus />Cadastrar {dados.singular}</Link>}</header>
     <div className="admin-users-panel">
       <div className="admin-users-toolbar admin-table-toolbar"><label className="admin-users-search"><span className="sr-only">Buscar</span><div><Search /><input type="search" value={busca} onChange={e => setBusca(e.target.value)} placeholder={`Buscar ${dados.singular}...`} /></div></label>{tipo === 'locais' && <label className="admin-local-filter">Modalidade<select value={filtroModalidade} onChange={e => setParametros(e.target.value ? { modalidade: e.target.value } : {})}><option value="">Todas as modalidades</option>{modalidades.data?.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}</select></label>}</div>
       {consulta.isSuccess && <div className="admin-filter-feedback" role="status"><span>{itens.length} {itens.length === 1 ? 'registro encontrado' : 'registros encontrados'}</span>{(busca || filtroModalidade) && <b>Filtro aplicado</b>}</div>}

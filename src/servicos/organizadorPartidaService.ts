@@ -10,6 +10,10 @@ export interface DadosCriacaoPartida {
   capacidade?: number;
   inscricoesAbremEm?: string;
   inscricoesEncerramEm?: string;
+  corEquipeAzul?: string;
+  corEquipeAmarela?: string;
+  nomeEquipeAzul?: string;
+  nomeEquipeAmarela?: string;
 }
 export interface DadosCriacaoPartidasLote extends Omit<DadosCriacaoPartida, 'inicio'> { inicios: string[]; }
 
@@ -20,6 +24,10 @@ export interface DadosEdicaoPartida {
   duracaoMinutos?: number;
   inscricoesAbremEm?: string;
   inscricoesEncerramEm?: string;
+  corEquipeAzul?: string;
+  corEquipeAmarela?: string;
+  nomeEquipeAzul?: string;
+  nomeEquipeAmarela?: string;
   versao: number;
 }
 

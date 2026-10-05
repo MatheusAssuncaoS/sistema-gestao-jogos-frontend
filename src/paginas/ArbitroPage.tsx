@@ -1,3 +1,5 @@
+import { useAuth } from '../contexto/useAuth';
+import { pode } from '../seguranca/permissoes';
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, BadgeAlert, CalendarDays, ChevronRight, Clock3, Flag, MapPin, Minus, Pause, Play, Plus, Shuffle, TimerReset, TriangleAlert, UserMinus, UsersRound } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -13,6 +15,7 @@ type Punicao = { id: string; time: Time; jogador: Inscrito; tipo: TipoCartao; mo
 const mensagemDeErro = (falha: unknown) => falha instanceof ApiError ? falha.detail : 'Não foi possível carregar os dados da partida.';
 
 export function ArbitroPage() {
+  const { usuario: operador } = useAuth();
   const queryClient = useQueryClient();
   const partidas = useQuery({ queryKey: ['arbitro', 'partidas'], queryFn: arbitroService.listarPartidas });
   const consultasDeEstado = useQueries({ queries: (partidas.data ?? []).map((partida) => ({ queryKey: ['arbitro', 'estado', partida.id], queryFn: () => arbitroService.obterEstado(partida.id) })) });
@@ -73,7 +76,7 @@ export function ArbitroPage() {
   }, [estadoArbitragem.data, estadoHidratado, partidaId, participantes.data]);
 
   useEffect(() => {
-    if (!partidaId || estadoHidratado !== partidaId || revisaoLocal === 0) return;
+    if (!pode(operador, 'ARBITRAGEM_GERENCIAR') || !partidaId || estadoHidratado !== partidaId || revisaoLocal === 0) return;
     const status: StatusArbitragem = partidaFinalizada ? 'FINALIZADA' : partidaIniciada ? cronometroRodando ? 'EM_ANDAMENTO' : 'PAUSADA' : 'PREPARACAO';
     const payload = {
       status,
@@ -94,7 +97,7 @@ export function ArbitroPage() {
       }).catch((falha: unknown) => setErroPersistencia(mensagemDeErro(falha)));
     }, 250);
     return () => window.clearTimeout(atraso);
-  }, [acrescimos, cronometroRodando, estadoHidratado, gols, partidaFinalizada, partidaId, partidaIniciada, punicoes, queryClient, revisaoLocal, times]);
+  }, [operador, acrescimos, cronometroRodando, estadoHidratado, gols, partidaFinalizada, partidaId, partidaIniciada, punicoes, queryClient, revisaoLocal, times]);
 
   function marcarAlteracao() { setRevisaoLocal((atual) => atual + 1); }
 
@@ -138,6 +141,8 @@ export function ArbitroPage() {
   if (estadoArbitragem.isError || participantes.isError) return <PainelOperacionalLayout ambiente="arbitro"><div className="player-empty"><CalendarDays /><h3>Não conseguimos recuperar a partida</h3><p>{mensagemDeErro(estadoArbitragem.error ?? participantes.error)}</p><button type="button" onClick={() => { estadoArbitragem.refetch(); participantes.refetch(); }}>Tentar novamente</button></div></PainelOperacionalLayout>;
 
   if (participantes.isPending || estadoArbitragem.isPending || estadoHidratado !== partidaId) return <PainelOperacionalLayout ambiente="arbitro"><div className="referee-schedule-page"><div className="player-loading"><i /><i /></div></div></PainelOperacionalLayout>;
+
+  if (!pode(operador, 'ARBITRAGEM_GERENCIAR')) return <PainelOperacionalLayout ambiente="arbitro"><section className="admin-card"><header className="admin-card-header"><div><h1>{partida?.modalidade} · {partida?.local}</h1><p>Consulta da arbitragem. Seu perfil não permite conduzir a partida.</p></div><button className="admin-button admin-button-secondary" onClick={voltarParaPartidas}>Voltar às partidas</button></header><div className="admin-form-fields"><p>Status: {estadoArbitragem.data?.status}</p><p>Placar: {gols.filter(g => g.time === 'AMARELO').length} × {gols.filter(g => g.time === 'AZUL').length}</p><p>{confirmados.length} participantes · {punicoes.length} punições</p><button className="admin-button admin-button-secondary" onClick={() => { setEstadoHidratado(''); void estadoArbitragem.refetch(); }}>Atualizar estado</button></div></section></PainelOperacionalLayout>;
 
   if (partidaIniciada && partida) return <PainelOperacionalLayout ambiente="arbitro"><div className="admin-breadcrumb"><span>Arbitragem</span><b>/</b> Partida em andamento</div>{erroPersistencia && <div className="player-feedback error" role="alert">{erroPersistencia}</div>}<PartidaEmAndamento partida={partida} amarelos={amarelos} azuis={azuis} segundos={segundos} rodando={cronometroRodando} gols={gols} punicoes={punicoes} acrescimos={acrescimos} partidaFinalizada={partidaFinalizada} alternarCronometro={() => { setCronometroRodando((atual) => !atual); marcarAlteracao(); }} zerarCronometro={() => { setCronometroRodando(false); setSegundos(0); setAcrescimos(0); marcarAlteracao(); }} registrarGol={registrarGol} removerUltimoGol={removerUltimoGol} atualizarPunicoes={(novas) => { setPunicoes(novas); marcarAlteracao(); }} atualizarAcrescimos={(valor) => { setAcrescimos(valor); marcarAlteracao(); }} finalizar={() => { setCronometroRodando(false); setPartidaFinalizada(true); marcarAlteracao(); }} voltar={voltarParaPartidas} /></PainelOperacionalLayout>;
 

@@ -1,3 +1,5 @@
+import { useAuth } from '../contexto/useAuth';
+import { pode } from '../seguranca/permissoes';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import {
   CalendarDays,
@@ -19,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../componentes/ui/card
 import { StatusBadge } from '../componentes/ui/StatusBadge';
 import { adminJogadorService } from '../servicos/adminJogadorService';
 import { adminUsuarioService } from '../servicos/adminUsuarioService';
+import { suspensaoService } from '../servicos/suspensaoService';
 import { organizadorPartidaService } from '../servicos/organizadorPartidaService';
 import type { Inscrito, Jogador, Partida } from '../servicos/tipos';
 
@@ -28,11 +31,20 @@ const nomesDias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const coresCategorias = ['#079447', '#4cc779', '#a9e6bf', '#d9f3e2'];
 
 export function AdminHome() {
+  const { usuario } = useAuth();
+  const location = useLocation();
+  const completo = ['USUARIOS_VISUALIZAR', 'SOLICITACOES_VISUALIZAR', 'JOGADORES_VISUALIZAR', 'PARTIDAS_VISUALIZAR', 'PARTIDAS_INSCRITOS'].every(p => pode(usuario, p));
+  if (!completo && location.pathname !== '/__design-preview') return <section className="admin-card"><header className="admin-card-header"><div><h1>Bem-vindo, {usuario?.nome.split(' ')[0]}</h1><p>Acesse as áreas disponíveis para o seu perfil no menu lateral.</p></div></header></section>;
+  return <DashboardCompleto />;
+}
+
+function DashboardCompleto() {
   const location = useLocation();
   const modoPrevia = import.meta.env.DEV && location.pathname === '/__design-preview';
   const opcoesConsulta = { refetchInterval: 60_000, refetchIntervalInBackground: false, refetchOnWindowFocus: true };
   const usuarios = useQuery({ queryKey: ['admin', 'usuarios'], queryFn: adminUsuarioService.listar, ...opcoesConsulta });
   const pendentes = useQuery({ queryKey: ['admin', 'jogadores', 'pendentes'], queryFn: adminJogadorService.listarPendentes, ...opcoesConsulta });
+  const suspensoes = useQuery({ queryKey: ['admin', 'suspensoes'], queryFn: suspensaoService.listar, ...opcoesConsulta });
   const jogadores = useQuery({ queryKey: ['admin', 'jogadores', 'ativos', 'dashboard'], queryFn: () => adminJogadorService.listarAtivos(''), ...opcoesConsulta });
   const partidas = useQuery({ queryKey: ['partidas', 'gestao'], queryFn: organizadorPartidaService.listar, ...opcoesConsulta });
   const consultasInscricoes = useQueries({ queries: (partidas.data ?? []).filter((partida) => !['CANCELADA', 'EXCLUIDA'].includes(partida.status)).slice(0, 30).map((partida) => ({ queryKey: ['partidas', partida.id, 'inscritos', 'dashboard'], queryFn: () => organizadorPartidaService.listarInscritos(partida.id), ...opcoesConsulta })) });
@@ -49,6 +61,8 @@ export function AdminHome() {
   const proximas = todasPartidas.filter((partida) => new Date(partida.inicio) >= agora && !['CANCELADA', 'EXCLUIDA'].includes(partida.status)).sort(porInicio);
   const lotadas = proximas.filter((partida) => partida.status === 'LOTADA');
   const bloqueados = (usuarios.data ?? (modoPrevia ? usuariosDemonstracao : [])).filter((usuario) => usuario.status === 'BLOQUEADO');
+  const hojeNoClube = agora.toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+  const suspensoesAtivas = (suspensoes.data ?? []).filter(item => !item.encerradaEm && item.inicio <= hojeNoClube && (!item.fim || item.fim >= hojeNoClube));
   const partidasAbertas = proximas.filter((partida) => partida.status === 'ABERTA' || partida.status === 'LOTADA');
   const totalVagas = partidasAbertas.reduce((total, partida) => total + partida.capacidade, 0);
   const vagasOcupadas = partidasAbertas.reduce((total, partida) => total + (partida.quantidadeInscritos ?? 0), 0);
@@ -64,11 +78,11 @@ export function AdminHome() {
   const ausencias = inscritos.filter((inscricao) => inscricao.status === 'AUSENTE').length;
   const totalPendentes = pendentes.data?.length ?? (modoPrevia ? 3 : 0);
   const inscricoesCarregando = consultasInscricoes.some((consulta) => consulta.isPending);
-  const carregando = !modoPrevia && (usuarios.isPending || pendentes.isPending || jogadores.isPending || partidas.isPending || inscricoesCarregando);
-  const comErro = !modoPrevia && (usuarios.isError || pendentes.isError || jogadores.isError || partidas.isError || consultasInscricoes.some((consulta) => consulta.isError));
+  const carregando = !modoPrevia && (usuarios.isPending || pendentes.isPending || suspensoes.isPending || jogadores.isPending || partidas.isPending || inscricoesCarregando);
+  const comErro = !modoPrevia && (usuarios.isError || pendentes.isError || suspensoes.isError || jogadores.isError || partidas.isError || consultasInscricoes.some((consulta) => consulta.isError));
 
   function atualizar() {
-    void Promise.all([usuarios.refetch(), pendentes.refetch(), jogadores.refetch(), partidas.refetch(), ...consultasInscricoes.map((consulta) => consulta.refetch())]);
+    void Promise.all([usuarios.refetch(), pendentes.refetch(), suspensoes.refetch(), jogadores.refetch(), partidas.refetch(), ...consultasInscricoes.map((consulta) => consulta.refetch())]);
   }
 
   return (
@@ -91,7 +105,7 @@ export function AdminHome() {
         <Metrica titulo="Partidas hoje" valor={partidasHoje.length} detalhe="programadas para hoje" icone={CalendarDays} carregando={!modoPrevia && partidas.isPending} />
         <Metrica titulo="Inscritos hoje" valor={inscritosHoje} detalhe="novas inscrições hoje" icone={UsersRound} carregando={!modoPrevia && inscricoesCarregando} />
         <Metrica titulo="Lista de espera" valor={listaEspera.length} detalhe={`em ${lotadas.length} partidas lotadas`} icone={Clock3} carregando={!modoPrevia && inscricoesCarregando} />
-        <Metrica titulo="Suspensões ativas" valor={bloqueados.length} detalhe="contas bloqueadas" icone={ShieldAlert} carregando={!modoPrevia && usuarios.isPending} alerta={bloqueados.length > 0} />
+        <Metrica titulo="Suspensões ativas" valor={suspensoesAtivas.length} detalhe="registros em vigor" icone={ShieldAlert} carregando={!modoPrevia && suspensoes.isPending} alerta={suspensoesAtivas.length > 0} />
         <Metrica titulo="Taxa de ocupação" valor={`${ocupacao}%`} detalhe={`${vagasOcupadas} de ${totalVagas || 0} vagas`} icone={CheckCircle2} carregando={!modoPrevia && partidas.isPending} />
       </section>
 

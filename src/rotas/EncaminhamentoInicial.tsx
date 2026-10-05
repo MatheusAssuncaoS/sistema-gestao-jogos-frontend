@@ -1,3 +1,4 @@
+import { destinoInicial } from '../seguranca/permissoes';
 import { Navigate } from 'react-router-dom';
 
 import { useAuth } from '../contexto/useAuth';
@@ -19,17 +20,5 @@ export function EncaminhamentoInicial() {
     return <Navigate to="/login" replace />;
   }
 
-  if (usuario.papeis.includes('ADMINISTRADOR')) {
-    return <Navigate to="/admin" replace />;
-  }
-
-  if (usuario.papeis.includes('ORGANIZADOR')) {
-    return <Navigate to="/organizador" replace />;
-  }
-
-  if (usuario.papeis.includes('ARBITRO')) {
-    return <Navigate to="/arbitro" replace />;
-  }
-
-  return <Navigate to="/partidas" replace />;
+  return <Navigate to={destinoInicial(usuario)} replace />;
 }

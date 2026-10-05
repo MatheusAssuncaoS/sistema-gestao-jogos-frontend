@@ -1,6 +1,15 @@
 import { api } from './api';
 import type { CadastroPendente, Categoria, Jogador, SituacaoAssociativa, Usuario } from './tipos';
 
+export interface DadosCriacaoJogador {
+  nome: string;
+  email: string;
+  senha: string;
+  matriculaAssociado?: string;
+  categoriaId: number;
+  situacaoAssociativa: SituacaoAssociativa;
+}
+
 export interface DadosAprovacao {
   matriculaAssociado?: string;
   categoriaId: number;
@@ -18,6 +27,7 @@ export interface DadosRedefinicaoSenha {
  * lugar só.
  */
 export const adminJogadorService = {
+  criar: (dados: DadosCriacaoJogador) => api.post<Jogador>('/api/admin/jogadores', dados),
   listarPendentes: () => api.get<CadastroPendente[]>('/api/admin/jogadores/pendentes'),
 
   listarCategorias: () => api.get<Categoria[]>('/api/admin/jogadores/categorias'),
